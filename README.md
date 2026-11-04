@@ -48,11 +48,11 @@
 
 | 成员 | 负责范围 |
 | --- | --- |
-| A | 登录退出、用户资料、密码、角色与权限 |
-| B | 动物新增、详情、基本资料编辑 |
-| C | 列表、多条件查询、分页排序、首页统计 |
-| D | 负责人、救助进度、安置、跟进记录 CRUD |
-| E | 领养登记、结案、动物删除和关联清理 |
+| T（原 A 模块） | 登录退出、用户资料、密码、角色与权限 |
+| L（原 B 模块） | 动物新增、详情、基本资料编辑 |
+| Y（原 C 模块） | 列表、多条件查询、分页排序、首页统计 |
+| M（原 D 模块） | 负责人、救助进度、安置、跟进记录 CRUD |
+| N（原 E 模块） | 领养登记、结案、动物删除和关联清理 |
 
 每人负责本模块页面、后端、数据库操作和测试；共同整合、修错、README、curl 和演示。
 
@@ -120,3 +120,126 @@ CONNECT_DB=1 npm start
 ### 第二版 UI 检查
 
 2026-11-04：15 个页面路径及其内部链接返回正常；列表筛选/分页、表单预览反馈、密码重复输入提示、预览后密码清空通过。确认表单提交不发起网络请求；禁用 JavaScript 时登录表单也不发送密码。375px/320px 全页面无整页横向溢出，窄屏领养操作入口可用。桌面首页、列表、新增、详情、登录及窄屏领养截图已检查。公共模型、依赖和数据库未变更。
+
+
+## 五人并行开发指南
+
+分区和分支只是协作安排，不新增目录、不实现业务功能。分支在建立时来自同一个 main 提交；后续不会自动同步。
+GitHub 分享代码，不分享 MongoDB 数据。每人使用自己电脑的 MongoDB 和虚构测试数据。
+
+| 成员 | 个人分支 | server.js 区域 | 主要页面/模型 | 第一项工作 |
+| --- | --- | --- | --- | --- |
+| T | feature/t-auth | 01 T 区 | login/profile/password；User | 真实账号登录退出，提供 requireLogin / requireAdmin，测试未登录和无权限 |
+| L | feature/l-animal | 02 L 区 | create/edit/details/animal-fields；Animal 基本字段 | 新增动物并读取详情，再实现基本资料修改 |
+| Y | feature/y-query | 03 Y 区 | dashboard/list | 用 MongoDB 替换示例查询，完成筛选、分页、排序和统计 |
+| M | feature/m-rescue | 04 M 区 | rescue/followup；FollowUp 与 Animal 救助字段 | 给测试动物添加跟进记录并查询，再接负责人、进度和安置 |
+| N | feature/n-adoption | 05 N 区 | adoption/close/delete；Adoption 与 Animal 领养字段 | 领养登记和状态校验，再接结案、删除与关联清理 |
+
+所有人都负责本模块页面、业务逻辑、数据库、接口、测试、模块说明和演示。T 的权限中间件是公共依赖；其他人可先本地实现模块，但保护页面和写操作必须在整合验收前接好。不要用“始终 next()”假装已完成认证。
+
+### 第一次开始：已有克隆仓库
+
+先确认 git status 没有未处理的修改。若有，先在自己的分支保存并提交，不要强制切换或丢弃文件。
+
+```bash
+cd ~/comp3810sef_group007
+git status
+git fetch origin
+```
+
+只执行本人对应的一条命令（首次创建本地跟踪分支）：
+
+```bash
+# T
+git switch --track origin/feature/t-auth
+# L
+git switch --track origin/feature/l-animal
+# Y
+git switch --track origin/feature/y-query
+# M
+git switch --track origin/feature/m-rescue
+# N
+git switch --track origin/feature/n-adoption
+```
+
+如果本地已经有个人分支，使用 git switch feature/t-auth 等本地分支名，不重复执行 --track。
+还没有克隆项目的成员，先在 Ubuntu 主目录执行下方命令，再按上面步骤选择自己的分支。先接受仓库协作者邀请才能推送。
+
+```bash
+cd ~
+git clone https://github.com/0110NiZ/comp3810sef_group007.git
+cd comp3810sef_group007
+```
+
+进入个人分支后：
+
+```bash
+nvm use 24
+npm ci
+code .
+npm start
+```
+
+浏览 http://localhost:8099。VS Code 左下角确认 WSL 和自己的分支。每个人电脑都可使用 8099；只有同一台电脑同时启动多份时才需要换端口。
+
+### 开发时如何把预览接成真实功能
+
+1. 阅读自己的页面、模型和 server.js 区域；保持公共字段、英文状态、EJS 模板变量一致。
+2. 先准备自己本机的 MongoDB 测试数据。CONNECT_DB=1 目前只连接，不自动替换示例数据；每个模块仍需改为真实查询/写入。
+3. 对准备接入的那个表单，将 method="dialog" 改为实际 method/action，移除 data-preview（以及不再使用的 data-sensitive），否则 preview.js 会继续拦截提交。不要一次解除其他成员的表单预览。
+4. HTML 表单可用 POST 页面路由；另提供真正 GET/POST/PUT/DELETE 的 /api 接口。二者共用本区域的业务处理函数，不复制一套状态规则。
+5. 公共区的 express.urlencoded/express.json、模型引入、数据库启动配置、session 依赖等变更先与组员协调。真实数据库功能必须在连接成功后运行，不要悄悄回退为示例数据并报告保存成功。
+6. 测试正常流程及无权限、无效 ID、缺少字段、空结果/重复提交等相关异常。各人补充下方自己的模块记录。
+
+### 保存、提交与合并
+
+只在本人分支开发，先 git status / git diff 检查，再 git add 指定改过的文件；不要提交 node_modules、.env、密码、数据库文件或真实个人资料。
+
+```bash
+git status
+git diff
+# 示例：T；其他成员换成自己实际修改的文件
+git add server.js views/login.ejs models/User.js README.md
+git commit -m "Implement login flow"
+git push
+```
+
+去 GitHub 创建 Pull Request：base=main，compare=本人 feature 分支。写清完成内容、测试结果和依赖；由另一位成员检查后再合并。不要直接向 main 推送日常开发，也不要强制推送。
+
+main 合入新功能后，先提交完自己的工作，再在自己的分支同步：
+
+```bash
+git fetch origin
+git merge origin/main
+# 无冲突或冲突解决后，运行相关测试，再同步个人分支
+git push
+```
+
+如有冲突，停止继续改功能，与另一位作者逐段核对。保留双方需要的代码，删除冲突标记后 git add 对应文件、git commit；不要直接全选“接受当前/传入”。依赖锁文件变化后再运行 npm ci。
+PR 合并时暂时保留这五个长期个人分支，避免初学阶段丢失远程分支入口。
+
+### 公共文件与接口归属
+
+- server.js 的 00/99 公共区、models/constants.js、views/header.ejs/footer.ejs/form-actions.ejs、public/style.css/preview.js、package*.json 均需协调修改；无指定个人独占维护权。
+- Animal.js：L 维护基本资料；M 维护负责人/进度/安置；N 维护领养/结案。改字段前先协调，不能另建同义模型。
+- details.ejs 由 L 主维护，M/N 提供字段和展示需求。每人的样式补充放 style.css 的对应注释区域，避免全文件格式化。
+- 后续 API 分工：T 账号相关；L POST /api/animals、GET/PUT /api/animals/:id；Y GET /api/animals、GET /api/stats；M 救助与跟进；N 领养、结案、DELETE /api/animals/:id。这些只是待实现约定，不是可调用接口。
+- 固定路径 /animals/new 先于 /animals/:id；所有路由在 99 区 404 之前。统计使用 /api/stats，避免与动物详情 ID 路由冲突。
+- 老师要求 API 至少覆盖 GET、POST、PUT、DELETE；业务字段和本分工为小组约定，不应称作老师指定内容。
+
+### 各人模块记录（各自填写自己的小节）
+
+#### T — 登录与用户
+完成内容：待填写。测试及 curl：待填写。
+
+#### L — 动物基本资料
+完成内容：待填写。测试及 curl：待填写。
+
+#### Y — 查询统计
+完成内容：待填写。测试及 curl：待填写。
+
+#### M — 救助跟进
+完成内容：待填写。测试及 curl：待填写。
+
+#### N — 领养结案与删除
+完成内容：待填写。测试及 curl：待填写。
