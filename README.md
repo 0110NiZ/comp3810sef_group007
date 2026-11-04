@@ -3,7 +3,7 @@
 流浪动物救助与领养管理系统，用于工作人员管理动物从发现、救助、安置到领养结案的档案。
 当前版本是页面原型：已完成首页、列表、详情及新增/编辑/救助/跟进/领养/结案/删除/个人资料/密码/登录表单页面。
 尚未实现账号认证、数据库 CRUD、跨记录状态校验及 REST API。表单可以填写和查看预览反馈，但不会保存、执行状态转换或认证；页面存在不代表后端功能已完成。
-本版只监听本机 127.0.0.1。没有账号权限保护，不用于正式部署。
+本地默认监听 127.0.0.1，支持 HOST/PORT 配置；production 默认监听 0.0.0.0。当前仍没有真实账号验证和路由保护，不用于正式部署。
 
 ## 公共字段约定（Group 007 项目设计，并非老师指定业务字段）
 
@@ -61,7 +61,7 @@
 保留课堂要求的根目录结构，没有 routes/controllers/services 等额外目录。
 
 - server.js：Express 配置、示例数据、页面 GET 路由和启动逻辑；后续业务处理函数仍放在此文件。
-- package.json / package-lock.json：现有依赖与版本锁定，无新增依赖。
+- package.json / package-lock.json：依赖与版本锁定；公共 Session 统一使用 cookie-session，更新后运行 npm ci。
 - models/：User.js、Animal.js、FollowUp.js、Adoption.js 定义公共模型；constants.js 统一枚举及标签。
 - views/：header.ejs、footer.ejs 为公共布局；animal-fields.ejs、form-actions.ejs 为表单公共部分；其余 EJS 对应各功能页面。footer.ejs 仅闭合布局，不显示页脚文字。
 - public/style.css：本地样式，支持窄屏；public/preview.js：拦截原型表单，仅显示未保存的反馈，不请求后端或写本地存储。
@@ -243,3 +243,139 @@ PR 合并时暂时保留这五个长期个人分支，避免初学阶段丢失�
 
 #### N — 领养结案与删除
 完成内容：待填写。测试及 curl：待填写。
+
+
+## 公共开发约定 第一版
+
+以下是五人的统一实施约定；其中标记“待实现”的内容不能当作已完成功能。以本节为后续开发准则，历史检查记录只代表当时已验证的范围。
+
+### 截图问题核对与本次处理
+
+| 问题 | 核对结果 | 本次处理 |
+| --- | --- | --- |
+| 登录与 Session 缺失 | 真实登录及 CRUD 网页权限保护确实尚未实现。老师允许 cookie-session、OAuth 或其他认证方式，并未指定某一个库 | 已安装并配置 cookie-session；T 负责实际密码验证、用户加载、退出与路由保护，不能仅安装中间件就宣称完成认证 |
+| 缺少请求体解析 | 属实，真实表单与 JSON API 接入前需补齐 | 已加入 express.urlencoded 和 express.json；现有字段为平铺结构，选择 extended:false，不需要机械照搬 true |
+| method=dialog 和 data-preview 阻止提交 | 属实，也是当前原型防止误提交的设计 | 保留未接后端的表单拦截；由各模块在真实处理路由完成后逐个改 POST/action 并移除 data-preview |
+| 固定监听 127.0.0.1 | 本机 Ubuntu 演示可用，外部或云端访问需调整 | 增加 HOST 环境变量，production 默认 0.0.0.0；不是现在就把无认证原型暴露到公网。省略 host 也可能监听 IPv6 ::，不应一概称作 0.0.0.0 |
+| 四类 REST 方法 | 必须真正提供 GET/POST/PUT/DELETE；HTML POST 路由不能替代 PUT/DELETE API | 明确网页路由和 API 表，业务仍由各人实现；API 未实现时统一 JSON 404，不伪造成功 |
+| API 是否必须无认证 | 老师原文是 “no need to add authentication”，即不要求，不是禁止 | 本组选择 API 也使用同一 Session 与角色规则，保持管理员删除等约束；curl 先登录再带 cookie。这是小组设计，不是老师的强制要求 |
+
+依据：Group Project Requirements.pdf 第 1 页及第 2 页目录要求。技术参考：[Express cookie-session](https://expressjs.com/en/resources/middleware/cookie-session/)；[Express 5 API](https://expressjs.com/en/5x/api/)。
+
+### 当前用户与权限接口 由 T 实现
+
+- 统一 `req.user = { _id, username, displayName, role }`，未登录为 null；`res.locals.currentUser` 同步同一个安全对象供 EJS 使用。当前代码只初始化为 null，不信任浏览器传来的用户 ID、角色或示例用户。
+- T 在 Session 之后、业务路由之前读取 req.session.userId，查询 User 并加载当前角色。无效、过期、用户不存在时清除 Session；数据库故障应报错，不能伪装登录成功。
+- cookie-session 是签名而非加密。Session 只保存最少信息，如 userId 和 expiresAt；不保存密码、passwordHash、电话或完整用户对象。T 校验 expiresAt；退出用 req.session=null。密码更改后的旧会话撤销策略由 T 在认证 PR 中说明并测试。
+- 密码统一由 T 提供 hashPassword / verifyPassword：使用 Node.js crypto.scrypt、每次随机 salt、固定参数并保存格式版本；其他成员不自行实现密码处理。登录失败不区分账号不存在还是密码错误，不打印密码。
+- `requireLogin(req,res,next)`：先依据服务器加载的 req.user 判断。网页未登录跳转固定 /login；/api 下返回 401 JSON，不跳转 HTML。
+- `requireAdmin(req,res,next)`：先执行登录检查，再检查真实 role==='admin'；普通工作人员返回 403。跟进作者检查由 M 在登录后执行；删除动物由 N 组合 requireAdmin。
+- 账号资料仅允许改 displayName/phone；username 和 role 不从普通资料表单更新。写入 createdBy、recordedBy、registeredBy、closedBy 取 req.user._id，不从表单接收。
+- 登录真实接入后，管理页面和对应网页写路由都需要保护；首页/列表/详情也视为内部管理页。登录页和必要静态资源可公开，退出改为 POST /logout，不能用 GET 链接执行退出。
+- 浏览器写入路由应验证 CSRF（T 统一提供 token 与验证方式），cookie 的 sameSite 不能代替完整业务权限验证。API 使用 JSON 与同一 Session；T 的 API 登录/CSRF 约定落实后再完成最终 curl 示例。
+- 当前 requireLogin/requireAdmin/hashPassword/verifyPassword/CSRF 均未实现，禁止复制仅 next() 的空函数充数。
+
+### Session 数据库和运行配置
+
+| 配置 | 统一约定 |
+| --- | --- |
+| Session 库 | cookie-session；name=group007_session；8 小时；httpOnly=true；sameSite=lax；production 下 secure=true |
+| SESSION_KEYS | 逗号分隔的随机签名密钥，每个至少 32 字符。生产必须配置；本地未配置时自动产生进程内随机密钥，重启旧 cookie 失效。密钥不要提交 GitHub |
+| MONGODB_URI | 默认 mongodb://127.0.0.1:27017/animal_rescue_group007；只在 server.js 启动函数连接一次，禁止各请求自行连接/断开 |
+| CONNECT_DB | 当前 1 表示启动前验证数据库连接；不设置为原型模式。各模块改为真实功能时必须确保连接成功，不能保存失败后回退到示例数组 |
+| HOST 与 PORT | 本地默认 127.0.0.1:8099；需要局域网/云端时显式 HOST=0.0.0.0，生产默认为此值；同时配置平台端口和网络规则 |
+| HTTPS 代理 | production 要使用 HTTPS；恰好一层可信反向代理时配置 TRUST_PROXY=1，否则不设置。不要为了让 Cookie 工作盲目信任任意代理 |
+
+当前直接使用进程环境变量，没有 dotenv，不会自动读取 .env。仅把密钥写进 .env 文件不会生效；如后续统一采用环境文件加载，先协调公共启动命令。
+本地测试连接与 Session 的示例（不是部署完成）：
+
+```bash
+sudo systemctl start mongod
+export SESSION_KEYS=$(node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))")
+CONNECT_DB=1 npm start
+```
+
+同一终端保留 export 的密钥可跨重启使用；新终端重新生成会使旧签名失效。各自电脑不必共用密钥。不要把生成的密钥、真实账号密码和数据库凭证发到群里或提交仓库。
+
+### 页面和 REST API 对照表 待各模块实现
+
+页面读取用 GET；下面网页写入采用 POST。所有写操作共用各负责人区域中的业务处理函数，分别返回网页跳转或 JSON，避免两个版本的状态规则。
+
+| 成员 | 网页操作 | 对应 API |
+| --- | --- | --- |
+| T | POST /login、/logout、/profile、/password | POST /api/login、/api/logout；GET/PUT /api/profile；PUT /api/password |
+| L | POST /animals/new；GET /animals/:id；POST /animals/:id/edit | POST /api/animals；GET/PUT /api/animals/:id |
+| Y | GET /animals 与 GET / | GET /api/animals；GET /api/stats |
+| M | POST /animals/:id/rescue | PUT /api/animals/:id/rescue |
+| M | GET/POST /animals/:id/followups/new；POST /animals/:id/followups/:followId/edit 或 /delete | GET/POST /api/animals/:id/followups；PUT/DELETE /api/animals/:id/followups/:followId |
+| N | POST /animals/:id/adoption-status、/adoption、/close、/delete | PUT /api/animals/:id/adoption-status；GET/POST /api/animals/:id/adoption；PUT /api/animals/:id/close；DELETE /api/animals/:id |
+
+GET 路由只能读取或显示表单，不能创建/更新/删除。固定 /animals/new 在 /animals/:id 前，所有路由必须在 99 区 404 处理前。已存在的 GET 表单页不等于本表的写接口已经可用。
+
+### 请求字段与响应格式
+
+- 所有 ID 为数据库 ObjectId 对应的 24 位十六进制字符串，animalCode 仅供展示。错误格式返回 400；格式正确但不存在返回 404。跟进 ID 必须同时属于 URL 中的 animalId。
+- POST 新增 Animal 只接收 animalType/appearance/foundLocation/healthStatus/contactName/contactPhone；animalCode、createdBy、默认状态由服务器赋值。L 负责编号唯一性，不能用文档总数加一；重复编号返回 409。
+- PUT 基本资料只接收上述六个字段；M 的救助更新只接收 rescueStatus/assignedTo/placementLocation；N 的开放领养只接收 adoptionStatus，领养登记只接收 adopterName/adopterPhone/remarks。结案时间和操作者由服务器产生。
+- 查询条件沿用 animalType/foundLocation/rescueStatus/adoptionStatus/sort/page；每页统一 3 条，page 从 1 开始，排序沿用现有四种值。无匹配是成功空列表，不是 404。网页/API 对无效查询使用同一归一化逻辑。
+- 不直接使用 req.body 或 req.query 作为 MongoDB 查询或整文档更新。标量字段拒绝数组和对象，字符串去首尾空白；枚举按 constants 检查。日期存 UTC，显示香港时区。
+- 长度统一：账号 3–40、显示姓名/联系人/领养人 1–80、电话 1–30（User.phone 可空）、地点最多 200、外观/健康最多 1000、跟进/备注最多 2000、新密码 8–128 字符。各模块在自己的字段接入这些约束；当前 Schema 的 required/enum 不代表全部长度校验已完成。
+- 网页成功保存后用 303 跳转详情/列表并重新查询。表单错误重新显示本页、保留非密码字段、显示原因；密码不回填。没有完成数据库写入之前不得显示保存成功。
+
+API 约定示例（不是当前业务接口的实际响应）：
+
+```json
+{ "success": true, "data": { "_id": "..." }, "message": "已保存" }
+```
+
+```json
+{ "success": true, "data": [], "pagination": { "page": 1, "pageSize": 3, "total": 0, "pageCount": 1 } }
+```
+
+```json
+{ "success": false, "error": { "code": "VALIDATION_ERROR", "message": "请填写联系人" } }
+```
+
+状态码统一：200 读取/更新/删除成功；201 创建成功；400 参数或 JSON 错误；401 未登录；403 无权限；404 不存在；409 重复/状态冲突；413 内容过大；500 未预期错误。删除成功使用 200 JSON，不返回 204 后再写正文。API 不返回 EJS、不泄露密码哈希或堆栈。
+API 通用 404、JSON 解析错误与请求体过大处理本次已实现，其余业务状态码由模块接入。
+
+### 测试数据与跨页面验收
+
+测试数据以场景和唯一 animalCode 对齐，不要求不同电脑的 ObjectId 相同。正式初始化脚本/命令由 T 与 L 协调在现有 server.js 内提供手动入口，不新增目录，也不在 npm start 时清空或灌入数据库；此入口目前尚未实现。
+
+| 测试对象 | 统一场景 |
+| --- | --- |
+| demo_admin / demo_staff | 管理员与普通工作人员两个虚构账号；密码由初始化过程本地输入并哈希，不在 README 声称账号已经可登录 |
+| A007-001 | 猫，救助中/未开放，负责人已指定，有跟进记录 |
+| A007-002 | 狗，已安置/可领养，测试领养登记 |
+| A007-003 | 猫，已安置/已领养，领养记录及结案时间完整，测试只读与保留档案 |
+| A007-004 | 狗，待救助/未开放，无负责人，测试救助进度前置条件 |
+| A007-005 | 已安置/办理中，存在一条未完成的领养记录，测试结案与重复请求；当前页面原型尚无此条 |
+
+目前 001–004 仅存在于示例数组，demoUsers 不是真实账号。导入后用数据库返回的 _id 构造链接，不复制示例数组 ID 当作真实库中一定存在的 ID。
+
+共同验收：L 新增 → Y 列表可查 → L 详情正确；M 添加跟进 → L 详情显示且不串到别的动物；N 结案 → L 详情、Y 统计同步，重复提交不重复领养；T 登录/退出 → 管理页访问正确；N 删除 → M 的跟进和领养关联记录处理一致。每次保存后从数据库读取验证，不只看提示文字。
+
+### 公共改动与开始顺序
+
+1. 五人先同步本次公共提交并 npm ci。不要复制对方整个 server.js；本次没有实现个人模块，也没有开放真实写接口。
+2. T 优先完成真实用户加载与 requireLogin/requireAdmin；其他成员可并行实现页面和数据库逻辑，但未接权限的写功能不能作为完成项合并验收。
+3. 公共数据库启动、请求解析、Session、导航、依赖由需要修改的人先通知组员，只提交必要改动。每个 PR 写清字段、路由、运行配置及影响到的另一位成员。
+4. 同一份 Animal 按字段更新，不整份覆盖；跟进和领养由其模型单独关联。N 的并发结案、重复领养、删除失败恢复需与 M 联测，不假定当前单机 MongoDB 支持事务。
+5. curl 最终演示至少覆盖 GET/POST/PUT/DELETE。按本组选择，先 POST /api/login 用 -c 保存 Cookie，再用 -b 带 Cookie；不要将未实现的示例命令写成已测试成功。
+
+本次同步后，已克隆个人分支的组员运行：
+
+```bash
+git status
+# 工作区干净时，在自己的 feature 分支执行
+git pull --ff-only
+npm ci
+```
+
+若本地有提交导致不能 fast-forward，先 git fetch origin，再与成员确认后合并对应远程分支，禁止 reset --hard 或 force push 覆盖工作。
+
+
+### 本次公共配置验证
+
+2026-11-04：JSON 与 URL 编码表单解析、400/413 错误、API JSON 404、网页 HTML 404、Session 签名与篡改拒绝、未自动产生认证用户、生产密钥要求均通过检查。HOST=0.0.0.0 的临时监听已验证；15 个页面与内部链接、筛选分页、预览表单及 375px/320px 布局回归通过。测试未写入数据库，未实现或验收真实登录、业务状态转换及 CRUD。

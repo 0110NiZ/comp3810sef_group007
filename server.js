@@ -8,12 +8,49 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('node:path');
+const { randomBytes } = require('node:crypto');
+const cookieSession = require('cookie-session');
 const labels = require('./models/constants');
 const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// 公共请求体解析：现有表单都是平铺字段，不需要 extended: true 的嵌套对象。
+// 解析不等于验证，各模块仍须按字段白名单检查 req.body。
+app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
+app.use(express.json({ limit: '100kb' }));
+
+// Session 基础配置已就绪；账号验证、用户加载及路由保护仍由 T 实现。
+const production = process.env.NODE_ENV === 'production';
+const sessionKeys = (process.env.SESSION_KEYS || '').split(',').map(key => key.trim()).filter(Boolean);
+if (sessionKeys.some(key => key.length < 32)) throw new Error('SESSION_KEYS 中的每个签名密钥至少需要 32 个字符');
+if (!sessionKeys.length) {
+    if (production) throw new Error('正式运行必须设置 SESSION_KEYS');
+    // 本地原型临时签名密钥，重启后旧 cookie 失效；不打印、不写入代码仓库。
+    sessionKeys.push(randomBytes(32).toString('hex'));
+}
+// 只在已确认恰好一层可信反向代理时设置 TRUST_PROXY=1。
+if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
+app.use(cookieSession({
+    name: 'group007_session', keys: sessionKeys,
+    maxAge: 8 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', secure: production
+}));
+app.use((req, res, next) => {
+    // 当前未认证；后续 T 从 req.session.userId 加载真实用户后再赋值。
+    req.user = null;
+    res.locals.currentUser = null;
+    next();
+});
+
+function isApiRequest(req) {
+    return req.path === '/api' || req.path.startsWith('/api/');
+}
+function sendApiError(res, status, code, message) {
+    return res.status(status).json({ success: false, error: { code, message } });
+}
+
 app.locals.labels = labels;
 app.locals.formatDate = (value) => value ? new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Asia/Hong_Kong', dateStyle: 'medium', timeStyle: 'short'
@@ -68,7 +105,7 @@ app.get('/profile', (req, res) => res.render('profile', { title: '个人资料',
 app.get('/password', (req, res) => res.render('password', { title: '修改密码', activePage: 'profile' }));
 
 // T 后续：实现 requireLogin / requireAdmin，并向其他成员说明调用方式。
-// 不写放行式的伪权限函数；认证中间件依赖的 session 配置放公共区、路由之前。
+// 不写放行式的伪权限函数；Session 已在公共区配置，T 的用户加载中间件应在所有业务路由之前。
 // 当前没有这些函数，其他模块不得提前引用；未接入权限的写功能不能视为验收完成。
 // T 的账号处理函数、接口和测试说明从这里继续。
 
@@ -199,7 +236,26 @@ app.get('/animals/:id/delete', (req, res) => {
 // 99 公共区｜404 和服务器启动（共同维护）
 // ============================================================================
 // 所有页面及 API 路由必须写在这个区域之前；不要在 404 后追加路由。
-app.use((req, res) => res.status(404).render('info', { title: '页面不存在', activePage: '', message: '这个页面暂不存在，请返回首页或动物列表。' }));
+app.use((req, res) => {
+    if (isApiRequest(req)) return sendApiError(res, 404, 'NOT_FOUND', '接口不存在或尚未实现');
+    return res.status(404).render('info', { title: '页面不存在', activePage: '', message: '这个页面暂不存在，请返回首页或动物列表。' });
+});
+
+// 错误处理在所有路由之后；API 返回 JSON，网页返回 EJS，不把堆栈或数据库信息发给用户。
+app.use((error, req, res, next) => {
+    if (res.headersSent) return next(error);
+    let status = 500;
+    let code = 'INTERNAL_ERROR';
+    let message = '服务器处理失败，请稍后重试';
+    if (error.type === 'entity.parse.failed') {
+        status = 400; code = 'INVALID_BODY'; message = '请求内容格式不正确';
+    } else if (error.status === 413) {
+        status = 413; code = 'BODY_TOO_LARGE'; message = '提交内容过大';
+    }
+    if (status === 500) console.error('请求处理失败：', error.message);
+    if (isApiRequest(req)) return sendApiError(res, status, code, message);
+    return res.status(status).render('info', { title: '请求失败', activePage: '', message });
+});
 
 // 保留已有数据库连接。原型模式默认不连接数据库，避免浏览页面产生数据库操作。
 // 需要单独验证连接时设置 CONNECT_DB=1；它不会把示例数据自动保存到数据库。
@@ -210,7 +266,8 @@ async function startServer() {
             console.log('MongoDB 连接成功（页面仍使用示例数据）');
         }
         const port = process.env.PORT || 8099;
-        const server = app.listen(port, '127.0.0.1', () => console.log(`页面原型：http://localhost:${port}（示例数据，未启用认证和写入）`));
+        const host = process.env.HOST || (production ? '0.0.0.0' : '127.0.0.1');
+        const server = app.listen(port, host, () => console.log(`页面原型：http://${host}:${port}（示例数据，未启用认证和写入）`));
         server.on('error', error => { console.error('启动失败：', error.message); process.exit(1); });
     } catch (error) {
         console.error('启动失败：', error.message);
