@@ -239,18 +239,8 @@ PR 合并时暂时保留这五个长期个人分支，避免初学阶段丢失�
 完成内容：待填写。测试及 curl：待填写。
 
 #### M — 救助跟进
-完成内容：
-1. 实现了救助状态管理（pending -> rescuing -> placed），严格执行单向推进与前置条件校验（rescuing 必选负责人，placed 必填负责人和安置地点；已结案动物禁止修改救助信息）。
-2. 实现了跟进记录（FollowUp）完整 CRUD 功能，涵盖跨动物 ID 安全校验、结案只读保护与持久化。
-3. 解除了 views/rescue.ejs 与 views/followup.ejs 的原型表单拦截，支持真实 POST 提交与页面重定向。
-4. 提供了 PUT /api/animals/:id/rescue 以及 FollowUp 完整的 GET / POST / PUT / DELETE 4 组符合 Lab 09 规范的 RESTful API。
 
-测试及 curl：
-- 查询跟进列表 (GET): curl "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
-- 新增跟进记录 (POST): curl -X POST -d "content=今天完成了狂犬疫苗注射与驱虫" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
-- 更新救助状态 (PUT): curl -X PUT -d "rescueStatus=rescuing&assignedTo=000000000000000000000002" "http://localhost:8099/api/animals/<ANIMAL_ID>/rescue"
-- 修改跟进记录 (PUT): curl -X PUT -d "content=今天完成了狂犬疫苗注射，复查情况良好" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
-- 删除跟进记录 (DELETE): curl -X DELETE "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+2026-11-10: 已实现救助进度推进（pending -> rescuing -> placed）、负责人指定、安置地点管理及跟进记录（FollowUp）完整 CRUD，包含救助单向推进校验、结案只读保护、跨动物跟进归属检查与 RESTful API。具体测试、运行配置、curl 和整合依赖见文末“M 模块实施与验收”。
 
 #### N — 领养结案与删除
 完成内容：待填写。测试及 curl：待填写。
@@ -390,3 +380,36 @@ npm ci
 ### 本次公共配置验证
 
 2026-11-04：JSON 与 URL 编码表单解析、400/413 错误、API JSON 404、网页 HTML 404、Session 签名与篡改拒绝、未自动产生认证用户、生产密钥要求均通过检查。HOST=0.0.0.0 的临时监听已验证；15 个页面与内部链接、筛选分页、预览表单及 375px/320px 布局回归通过。测试未写入数据库，未实现或验收真实登录、业务状态转换及 CRUD。
+
+
+### M 模块实施与验收
+
+#### 1. 负责范围与核心规则
+- 页面：/animals/:id/rescue（救助管理）、/animals/:id/followups/new（新增跟进）、/animals/:id/followups/:followId/edit（编辑跟进）、/animals/:id/followups/:followId/delete（删除跟进）。
+- 救助推进规则：pending -> rescuing -> placed，严格单向推进；进入 rescuing 必须指定负责人，进入 placed 必须有负责人和安置地点；已结案档案禁止修改。
+- 跟进记录（FollowUp）：支持增删改查；严格校验 followUp.animalId 与当前动物一致；已结案档案禁止追加/修改/删除跟进。
+
+#### 2. RESTful API 列表 (对齐 Lab 09 规范)
+- PUT /api/animals/:id/rescue：更新动物救助状态及安置信息
+- GET /api/animals/:id/followups：读取指定动物的所有跟进记录
+- POST /api/animals/:id/followups：新增一条跟进记录 (HTTP POST)
+- PUT /api/animals/:id/followups/:followId：修改指定跟进内容 (HTTP PUT)
+- DELETE /api/animals/:id/followups/:followId：删除指定跟进记录 (HTTP DELETE)
+
+#### 3. CURL 测试命令 (用于 Demo 演示与登记表)
+```bash
+# 1. 查询跟进列表 (GET)
+curl "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+
+# 2. 新增跟进记录 (POST)
+curl -X POST -d "content=今天完成了狂犬疫苗注射与驱虫" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+
+# 3. 推进救助状态至救助中 (PUT)
+curl -X PUT -d "rescueStatus=rescuing&assignedTo=000000000000000000000002" "http://localhost:8099/api/animals/<ANIMAL_ID>/rescue"
+
+# 4. 修改跟进记录 (PUT)
+curl -X PUT -d "content=今天完成了狂犬疫苗注射，复查情况良好" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+
+# 5. 删除跟进记录 (DELETE)
+curl -X DELETE "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+```
