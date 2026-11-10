@@ -239,7 +239,18 @@ PR 合并时暂时保留这五个长期个人分支，避免初学阶段丢失�
 完成内容：待填写。测试及 curl：待填写。
 
 #### M — 救助跟进
-完成内容：待填写。测试及 curl：待填写。
+完成内容：
+1. 实现了救助状态管理（pending -> rescuing -> placed），严格执行单向推进与前置条件校验（rescuing 必选负责人，placed 必填负责人和安置地点；已结案动物禁止修改救助信息）。
+2. 实现了跟进记录（FollowUp）完整 CRUD 功能，涵盖跨动物 ID 安全校验、结案只读保护与持久化。
+3. 解除了 views/rescue.ejs 与 views/followup.ejs 的原型表单拦截，支持真实 POST 提交与页面重定向。
+4. 提供了 PUT /api/animals/:id/rescue 以及 FollowUp 完整的 GET / POST / PUT / DELETE 4 组符合 Lab 09 规范的 RESTful API。
+
+测试及 curl：
+- 查询跟进列表 (GET): curl "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+- 新增跟进记录 (POST): curl -X POST -d "content=今天完成了狂犬疫苗注射与驱虫" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+- 更新救助状态 (PUT): curl -X PUT -d "rescueStatus=rescuing&assignedTo=000000000000000000000002" "http://localhost:8099/api/animals/<ANIMAL_ID>/rescue"
+- 修改跟进记录 (PUT): curl -X PUT -d "content=今天完成了狂犬疫苗注射，复查情况良好" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+- 删除跟进记录 (DELETE): curl -X DELETE "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
 
 #### N — 领养结案与删除
 完成内容：待填写。测试及 curl：待填写。
