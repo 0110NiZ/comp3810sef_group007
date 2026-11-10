@@ -239,8 +239,7 @@ PR 合并时暂时保留这五个长期个人分支，避免初学阶段丢失�
 完成内容：待填写。测试及 curl：待填写。
 
 #### M — 救助跟进
-
-2026-11-10: 已实现救助进度推进（pending -> rescuing -> placed）、负责人指定、安置地点管理及跟进记录（FollowUp）完整 CRUD，包含救助单向推进校验、结案只读保护、跨动物跟进归属检查与 RESTful API。具体测试、运行配置、curl 和整合依赖见文末“M 模块实施与验收”。
+2026-11-10: 已实现救助进度推进（pending -> rescuing -> placed）、负责人指定、安置地点管理及跟进记录（FollowUp）完整 CRUD，严格遵守单向流转、结案只读保护、跨动物跟进归属校验与 5 组 RESTful API，已通过本地真实数据库测试。具体测试、curl 演示及与 N 模块的联动说明见文末“M 模块实施与验收”。
 
 #### N — 领养结案与删除
 完成内容：待填写。测试及 curl：待填写。
@@ -382,34 +381,51 @@ npm ci
 2026-11-04：JSON 与 URL 编码表单解析、400/413 错误、API JSON 404、网页 HTML 404、Session 签名与篡改拒绝、未自动产生认证用户、生产密钥要求均通过检查。HOST=0.0.0.0 的临时监听已验证；15 个页面与内部链接、筛选分页、预览表单及 375px/320px 布局回归通过。测试未写入数据库，未实现或验收真实登录、业务状态转换及 CRUD。
 
 
-### M 模块实施与验收
+### M 模块实施与验收 2026-11-10
 
-#### 1. 负责范围与核心规则
-- 页面：/animals/:id/rescue（救助管理）、/animals/:id/followups/new（新增跟进）、/animals/:id/followups/:followId/edit（编辑跟进）、/animals/:id/followups/:followId/delete（删除跟进）。
-- 救助推进规则：pending -> rescuing -> placed，严格单向推进；进入 rescuing 必须指定负责人，进入 placed 必须有负责人和安置地点；已结案档案禁止修改。
-- 跟进记录（FollowUp）：支持增删改查；严格校验 followUp.animalId 与当前动物一致；已结案档案禁止追加/修改/删除跟进。
+### 负责范围与业务逻辑边界
+- 分支 `feature/m-rescue`。业务与 RESTful API 路由集中在 `server.js` 的 04 M 区，未增加外部目录及多余依赖。
+- 维护模型：`FollowUp.js` 全量字段，以及 `Animal.js` 中的救助维度字段（`rescueStatus`、`assignedTo`、`placementLocation`）。
+- 前端页面接入：真实页面 `views/rescue.ejs`、`views/followup.ejs`，解除了原型表单拦截，支持真实 POST 提交与重定向。
+- 救助单向推进：严格限制 `pending` -> `rescuing` -> `placed`，禁止进度倒退；进入 `rescuing` 必须指定负责人；进入 `placed` 必须有负责人及安置地点。
+- 跟进记录（FollowUp）：提供完整 CRUD；严格校验 `followUp.animalId` 与当前操作动物一致，防范跨档案非法修改与删除。
+- 结案只读保护：严格执行全组约定，动物一旦结案（`closedAt` 存在或 `adoptionStatus === "adopted"`），后端拒绝修改救助状态，拒绝新增、修改或删除跟进记录。
 
-#### 2. RESTful API 列表 (对齐 Lab 09 规范)
-- PUT /api/animals/:id/rescue：更新动物救助状态及安置信息
-- GET /api/animals/:id/followups：读取指定动物的所有跟进记录
-- POST /api/animals/:id/followups：新增一条跟进记录 (HTTP POST)
-- PUT /api/animals/:id/followups/:followId：修改指定跟进内容 (HTTP PUT)
-- DELETE /api/animals/:id/followups/:followId：删除指定跟进记录 (HTTP DELETE)
+### 与 N 模块的跨集合联动说明
+- 结案状态约束：M 模块的所有写操作均在执行前检索动物的 `closedAt` 与 `adoptionStatus`，保证与 N 模块的结案状态强一致。
+- 关联清理协同：当 N 模块执行动物删除时，清理相关联的 `FollowUp` 记录。M 模块在跟进操作中强制校验动物存在性，避免产生孤立记录。
 
-#### 3. CURL 测试命令 (用于 Demo 演示与登记表)
+### 页面与 RESTful API 路由对照表
+
+| 业务功能 | 网页 POST 路由 | RESTful API (对齐 Lab 09) | HTTP 状态码 |
+| :--- | :--- | :--- | :--- |
+| 更新救助状态 | POST /animals/:id/rescue | PUT /api/animals/:id/rescue | 200 / 400 / 403 / 404 |
+| 查询动物跟进列表 | — (详情页内嵌) | GET /api/animals/:id/followups | 200 / 404 |
+| 添加跟进记录 | POST /animals/:id/followups/new | POST /api/animals/:id/followups | 201 / 400 / 403 / 404 |
+| 修改跟进记录 | POST /animals/:id/followups/:followId/edit | PUT /api/animals/:id/followups/:followId | 200 / 400 / 403 / 404 |
+| 删除跟进记录 | POST /animals/:id/followups/:followId/delete | DELETE /api/animals/:id/followups/:followId | 200 / 403 / 404 |
+
+### CURL 测试命令 (用于课堂演示与登记表)
+
+在终端中使用真实测试动物 ID（如 `672db0000000000000000001`）进行验证：
+
 ```bash
+BASE="http://localhost:8099"
+ID="672db0000000000000000001"
+
 # 1. 查询跟进列表 (GET)
-curl "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+curl -sS "$BASE/api/animals/$ID/followups"
 
 # 2. 新增跟进记录 (POST)
-curl -X POST -d "content=今天完成了狂犬疫苗注射与驱虫" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups"
+curl -i -X POST -d "content=今天完成了狂犬疫苗注射与驱虫" "$BASE/api/animals/$ID/followups"
 
-# 3. 推进救助状态至救助中 (PUT)
-curl -X PUT -d "rescueStatus=rescuing&assignedTo=000000000000000000000002" "http://localhost:8099/api/animals/<ANIMAL_ID>/rescue"
+# 3. 推进救助状态至 rescuing (PUT)
+curl -i -X PUT -d "rescueStatus=rescuing&assignedTo=000000000000000000000002" "$BASE/api/animals/$ID/rescue"
 
-# 4. 修改跟进记录 (PUT)
-curl -X PUT -d "content=今天完成了狂犬疫苗注射，复查情况良好" "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+# 4. 修改跟进记录 (PUT - 替换为实际返回的 followId)
+curl -i -X PUT -d "content=今天完成了狂犬疫苗注射，复查情况良好" "$BASE/api/animals/$ID/followups/<FOLLOW_ID>"
 
 # 5. 删除跟进记录 (DELETE)
-curl -X DELETE "http://localhost:8099/api/animals/<ANIMAL_ID>/followups/<FOLLOW_ID>"
+curl -i -X DELETE "$BASE/api/animals/$ID/followups/<FOLLOW_ID>"
 ```
+
