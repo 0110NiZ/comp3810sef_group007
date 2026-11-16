@@ -434,27 +434,185 @@ app.put('/api/password', requireLogin, requireCsrf, updatePassword);
 // ============================================================================
 // 02 L 区｜动物新增、详情、基本资料编辑
 // ============================================================================
-// 分支 feature/l-animal；只更新基本资料，不修改 M/N 的救助、领养及结案字段。
-app.get('/animals/new', (req, res) => res.render('create', { title: '新增动物', activePage: 'create', animal: {} }));
+// 分支 feature/l-animal；依赖 T 的真实身份加载、requireLogin 和 requireCsrf。
+const LAnimal = require('./models/Animal');
+const LFollowUp = require('./models/FollowUp');
+const LAdoption = require('./models/Adoption');
+const lBasicFields = ['animalType', 'appearance', 'foundLocation', 'healthStatus', 'contactName', 'contactPhone'];
 
-app.get('/animals/:id/edit', (req, res) => {
-    const animal = demoAnimals.find(item => item._id === req.params.id);
-    if (!animal) return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到这条动物记录。' });
-    res.render('edit', { title: '编辑动物资料', activePage: 'list', animal, users: demoUsers,
-        adoption: demoAdoptions.find(item => item.animalId === animal._id) || null });
+function lError(status, code, message) {
+    return Object.assign(new Error(message), { lStatus: status, lCode: code });
+}
+function lDatabase(req, res, next) {
+    if (mongoose.connection.readyState === 1) return next();
+    const message = '数据库未连接，请使用 CONNECT_DB=1 启动';
+    if (isApiRequest(req)) return sendApiError(res, 503, 'DATABASE_UNAVAILABLE', message);
+    return res.status(503).render('info', { title: '数据库未连接', activePage: 'list', message });
+}
+function lId(id) {
+    if (typeof id !== 'string' || !/^[a-f0-9]{24}$/i.test(id)) {
+        throw lError(400, 'INVALID_ID', '动物 ID 格式不正确');
+    }
+}
+function lInput(body, editing) {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw lError(400, 'VALIDATION_ERROR', '请提交动物基本资料');
+    }
+    const allowed = new Set([...lBasicFields, '_csrf', ...(editing ? ['expectedUpdatedAt'] : [])]);
+    if (Object.keys(body).some(key => !allowed.has(key))) {
+        throw lError(400, 'VALIDATION_ERROR', '包含不允许修改的字段');
+    }
+    const limits = { animalType: 10, appearance: 1000, foundLocation: 200,
+        healthStatus: 1000, contactName: 80, contactPhone: 30 };
+    const values = {};
+    for (const key of lBasicFields) {
+        if (typeof body[key] !== 'string') throw lError(400, 'VALIDATION_ERROR', `${key} 必须是文本`);
+        values[key] = body[key].trim();
+        if (!values[key] || values[key].length > limits[key]) {
+            throw lError(400, 'VALIDATION_ERROR', `${key} 必填，最多 ${limits[key]} 个字符`);
+        }
+    }
+    if (!Object.hasOwn(labels.animalTypes, values.animalType)) {
+        throw lError(400, 'VALIDATION_ERROR', '请选择有效的动物类型');
+    }
+    return values;
+}
+function lSafeValues(body) {
+    return Object.fromEntries(lBasicFields.map(key => [key,
+        typeof body?.[key] === 'string' ? body[key].slice(0, 1001) : '']));
+}
+function lFailure(error, req, res, next, form) {
+    let status = error.lStatus;
+    let code = error.lCode;
+    let message = error.message;
+    if (error.code === 11000) {
+        status = 409; code = 'DUPLICATE_CODE'; message = '编号发生冲突，请重新登记';
+    } else if (error.name === 'ValidationError') {
+        status = 400; code = 'VALIDATION_ERROR'; message = '动物资料不符合字段要求';
+    }
+    if (!status) return next(error);
+    if (isApiRequest(req)) return sendApiError(res, status, code, message);
+    if (form && status === 400) return res.status(status).render(form.view, {
+        title: form.view === 'create' ? '新增动物' : '编辑动物资料',
+        activePage: form.view === 'create' ? 'create' : 'list',
+        animal: { ...(form.animal || {}), ...lSafeValues(req.body) },
+        expectedUpdatedAt: req.body?.expectedUpdatedAt,
+        error: message
+    });
+    return res.status(status).render('info', { title: '操作未完成', activePage: 'list', message });
+}
+async function lLoad(id) {
+    lId(id);
+    const animal = await LAnimal.findById(id).lean();
+    if (!animal) throw lError(404, 'NOT_FOUND', '未找到这条动物记录');
+    return animal;
+}
+function lOpen(animal) {
+    if (animal.closedAt || animal.adoptionStatus === 'adopted') {
+        throw lError(409, 'ANIMAL_CLOSED', '动物已结案，不能编辑基本资料');
+    }
+}
+
+app.get('/animals/new', requireLogin, lDatabase, (req, res) => res.render('create', {
+    title: '新增动物', activePage: 'create', animal: {}, error: ''
+}));
+
+async function lCreate(req, res, next) {
+    try {
+        const values = lInput(req.body, false);
+        // UUID 级随机编号加数据库唯一索引，不使用记录数加一。
+        const animal = await LAnimal.create({ ...values,
+            animalCode: 'A007-' + randomBytes(16).toString('hex').toUpperCase(),
+            createdBy: req.user._id,
+            rescueStatus: 'pending', assignedTo: null, placementLocation: '',
+            adoptionStatus: 'not_open', closedAt: null, closedBy: null
+        });
+        if (isApiRequest(req)) return res.status(201).json({ success: true, data: animal, message: '已登记' });
+        return res.redirect(303, '/animals/' + animal._id);
+    } catch (error) { return lFailure(error, req, res, next, { view: 'create' }); }
+}
+app.post('/animals/new', requireLogin, requireCsrf, lDatabase, lCreate);
+app.post('/api/animals', requireLogin, requireCsrf, lDatabase, lCreate);
+
+app.get('/animals/:id/edit', requireLogin, lDatabase, async (req, res, next) => {
+    try {
+        const animal = await lLoad(req.params.id);
+        lOpen(animal);
+        return res.render('edit', { title: '编辑动物资料', activePage: 'list', animal,
+            expectedUpdatedAt: animal.updatedAt.toISOString(), error: '' });
+    } catch (error) { return lFailure(error, req, res, next); }
+});
+async function lUpdate(req, res, next) {
+    let animal;
+    try {
+        animal = await lLoad(req.params.id);
+        lOpen(animal);
+        const values = lInput(req.body, true);
+        const supplied = req.body.expectedUpdatedAt;
+        if (supplied === undefined && !isApiRequest(req)) {
+            throw lError(400, 'VALIDATION_ERROR', '页面缺少版本，请重新打开编辑页');
+        }
+        if (supplied !== undefined && (typeof supplied !== 'string' ||
+            !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(supplied) ||
+            !Number.isFinite(Date.parse(supplied)))) {
+            throw lError(400, 'VALIDATION_ERROR', '资料版本格式错误，请重新打开编辑页');
+        }
+        if (supplied !== undefined && supplied !== animal.updatedAt.toISOString()) {
+            throw lError(409, 'STALE_RECORD', '资料已被其他操作更新，请重新打开详情后编辑');
+        }
+        const updated = await LAnimal.findOneAndUpdate({
+            _id: animal._id, closedAt: null, adoptionStatus: { $ne: 'adopted' }, updatedAt: animal.updatedAt
+        }, { $set: { ...values, updatedAt: new Date(Math.max(Date.now(), animal.updatedAt.getTime() + 1)) },
+            $inc: { __v: 1 } }, { returnDocument: 'after', runValidators: true, timestamps: false }).lean();
+        if (!updated) {
+            const current = await lLoad(req.params.id);
+            lOpen(current);
+            throw lError(409, 'STALE_RECORD', '资料已被其他操作更新，请重新打开详情后编辑');
+        }
+        if (isApiRequest(req)) return res.json({ success: true, data: updated, message: '已保存' });
+        return res.redirect(303, '/animals/' + updated._id);
+    } catch (error) { return lFailure(error, req, res, next, animal && { view: 'edit', animal }); }
+}
+app.post('/animals/:id/edit', requireLogin, requireCsrf, lDatabase, lUpdate);
+app.put('/api/animals/:id', requireLogin, requireCsrf, lDatabase, lUpdate);
+
+app.get('/api/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
+    try { return res.json({ success: true, data: await lLoad(req.params.id), message: '读取成功' }); }
+    catch (error) { return lFailure(error, req, res, next); }
+});
+app.get('/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
+    try {
+        await lLoad(req.params.id);
+        const [animal, followUps, adoptionRecords] = await Promise.all([
+            LAnimal.findById(req.params.id).populate('createdBy assignedTo closedBy', 'displayName username').lean(),
+            LFollowUp.find({ animalId: req.params.id }).sort({ createdAt: -1, _id: -1 })
+                .populate('recordedBy updatedBy', 'displayName username').lean(),
+            LAdoption.find({ animalId: req.params.id }).sort({ createdAt: -1, _id: -1 })
+                .populate('registeredBy', 'displayName username').lean()
+        ]);
+        if (!animal) throw lError(404, 'NOT_FOUND', '这条动物记录已被删除');
+        const userName = user => !user ? '未指定或账号已删除' :
+            typeof user === 'object' && (user.displayName || user.username) || '账号资料不可用';
+        return res.render('details', { title: '动物详情', activePage: 'list', animal, followUps,
+            adoption: adoptionRecords[0] || null, adoptionRecords, userName });
+    } catch (error) { return lFailure(error, req, res, next); }
 });
 
-app.get('/animals/:id', (req, res) => {
-    const animal = demoAnimals.find(a => a._id === req.params.id);
-    if (!animal) return res.status(404).render('info', { title: '记录不存在', activePage: '', message: '未找到这条动物记录，请返回列表。' });
-    res.render('details', { title: '动物详情', activePage: 'list', animal,
-        followUps: demoFollowUps.filter(item => item.animalId === animal._id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-        adoption: demoAdoptions.find(item => item.animalId === animal._id) || null });
-});
+// 手动初始化一个本机虚构 staff 账号；仅显式命令触发，不覆盖任何已有账号。
+async function lCreateTestUser() {
+    if (production) throw new Error('测试账号初始化不用于生产环境');
+    const password = require('node:fs').readFileSync(0, 'utf8');
+    const passwordHash = await hashPassword(password);
+    try {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/animal_rescue_group007',
+            { serverSelectionTimeoutMS: 5000 });
+        await User.init();
+        if (await User.exists({ username: 'l_demo_staff' })) throw new Error('l_demo_staff 已存在，未覆盖密码或资料');
+        await User.create({ username: 'l_demo_staff', displayName: 'L 本机测试工作人员', passwordHash, role: 'staff' });
+        console.log('已创建 l_demo_staff（staff），请使用自己设置的密码登录');
+    } finally { await mongoose.disconnect(); }
+}
 
-// 固定路径 /animals/new 必须先于 /animals/:id 注册。
-// L 后续：新增/修改处理函数，POST /api/animals、GET/PUT /api/animals/:id。
-// 详情页是展示汇总：M/N 提供跟进、领养字段，详情模板由 L 协调整合。
 
 // ============================================================================
 // 03 Y 区｜首页统计、动物列表、查询、分页与排序
@@ -585,16 +743,20 @@ async function startServer() {
     try {
         if (process.env.CONNECT_DB === '1') {
             await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/animal_rescue_group007', { serverSelectionTimeoutMS: 5000 });
-            console.log('MongoDB 连接成功（页面仍使用示例数据）');
+            console.log('MongoDB 连接成功（T 登录与 L 动物资料已接入；其他模块需联调）');
         }
         const port = process.env.PORT || 8099;
         const host = process.env.HOST || (production ? '0.0.0.0' : '127.0.0.1');
-        const server = app.listen(port, host, () => console.log(`页面原型：http://${host}:${port}（示例数据，未启用认证和写入）`));
+        const server = app.listen(port, host, () => console.log(`项目地址：http://${host}:${port}（请先登录；首页和列表仍为原型）`));
         server.on('error', error => { console.error('启动失败：', error.message); process.exit(1); });
     } catch (error) {
         console.error('启动失败：', error.message);
         process.exit(1);
     }
 }
-if (require.main === module) startServer();
+if (require.main === module) {
+    if (process.argv.includes('--l-create-test-user')) {
+        lCreateTestUser().catch(error => { console.error(error.message); process.exitCode = 1; });
+    } else startServer();
+}
 module.exports = app;
