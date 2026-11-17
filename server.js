@@ -134,49 +134,543 @@ app.get('/animals/:id', (req, res) => {
 // L 后续：新增/修改处理函数，POST /api/animals、GET/PUT /api/animals/:id。
 // 详情页是展示汇总：M/N 提供跟进、领养字段，详情模板由 L 协调整合。
 
-// ============================================================================
-// 03 Y 区｜首页统计、动物列表、查询、分页与排序
-// ============================================================================
-// 分支 feature/y-query；数据库查询只读取公共字段，不重新定义模型或状态。
-app.get('/', (req, res) => {
-    const countBy = (field, values) => Object.keys(values).map(value => ({
-        label: values[value], count: demoAnimals.filter(animal => animal[field] === value).length
-    }));
-    res.render('dashboard', {
-        title: '首页统计', activePage: 'home', total: demoAnimals.length,
-        rescueCounts: countBy('rescueStatus', labels.rescueStatuses),
-        adoptionCounts: countBy('adoptionStatus', labels.adoptionStatuses),
-        animals: [...demoAnimals].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3)
-    });
-});
+ // ============================================================================
+ // 03 Y 区｜首页统计、动物列表、查询、分页与排序
+ // ============================================================================
 
-app.get('/animals', (req, res) => {
-    // 只接收已知查询字段；重复参数或数组参数按空值处理。
-    const text = key => typeof req.query[key] === 'string' ? req.query[key].trim() : '';
-    const filters = { animalType: text('animalType'), foundLocation: text('foundLocation'),
-        rescueStatus: text('rescueStatus'), adoptionStatus: text('adoptionStatus'), sort: text('sort') || 'updated_desc' };
-    for (const [field, values] of [['animalType', labels.animalTypes], ['rescueStatus', labels.rescueStatuses], ['adoptionStatus', labels.adoptionStatuses]]) {
-        if (!Object.hasOwn(values, filters[field])) filters[field] = '';
+const YAnimal = require('./models/Animal');
+
+const Y_PAGE_SIZE = 3;
+
+const Y_SORT_OPTIONS = {
+    updated_desc: { updatedAt: -1, animalCode: 1 },
+    updated_asc: { updatedAt: 1, animalCode: 1 },
+    created_desc: { createdAt: -1, animalCode: 1 },
+    created_asc: { createdAt: 1, animalCode: 1 }
+};
+
+function yUseMock() {
+    if (process.env.NODE_ENV === 'production') {
+        return false;
     }
-    const sorts = { updated_desc: ['updatedAt', -1], updated_asc: ['updatedAt', 1], created_desc: ['createdAt', -1], created_asc: ['createdAt', 1] };
-    if (!Object.hasOwn(sorts, filters.sort)) filters.sort = 'updated_desc';
-    const matches = demoAnimals.filter(a => (!filters.animalType || a.animalType === filters.animalType)
-        && a.foundLocation.includes(filters.foundLocation)
-        && (!filters.rescueStatus || a.rescueStatus === filters.rescueStatus)
-        && (!filters.adoptionStatus || a.adoptionStatus === filters.adoptionStatus));
-    const [field, direction] = sorts[filters.sort];
-    matches.sort((a, b) => direction * a[field].localeCompare(b[field]) || a.animalCode.localeCompare(b.animalCode));
-    const pageSize = 3;
-    const pageCount = Math.max(1, Math.ceil(matches.length / pageSize));
-    const requestedPage = Number(text('page'));
-    const page = Math.min(pageCount, Math.max(1, Number.isSafeInteger(requestedPage) ? requestedPage : 1));
-    const pageUrl = number => '/animals?' + new URLSearchParams({ ...filters, page: String(number) });
-    res.render('list', { title: '动物列表', activePage: 'list', filters, page, pageCount,
-        total: matches.length, pageUrl, animals: matches.slice((page - 1) * pageSize, page * pageSize) });
+
+    if (mongoose.connection.readyState === 1) {
+        return false;
+    }
+
+    return process.env.Y_PREVIEW !== '0';
+}
+
+function yDatabaseAvailable(req, res, next) {
+    if (mongoose.connection.readyState === 1 || yUseMock()) {
+        return next();
+    }
+
+    if (isApiRequest(req)) {
+        return sendApiError(
+            res,
+            503,
+            'DB_UNAVAILABLE',
+            '数据库尚未连接'
+        );
+    }
+
+    return res.status(503).render('info', {
+        title: '数据库未连接',
+        activePage: '',
+        message: '数据库尚未连接，请检查 MongoDB 配置。'
+    });
+}
+
+function yError(message) {
+    const error = new Error(message);
+    error.status = 400;
+    return error;
+}
+
+function yReadQuery(query, key) {
+    const value = query[key];
+
+    if (value === undefined) {
+        return '';
+    }
+
+    if (typeof value !== 'string') {
+        throw yError(`${key} 参数格式不正确`);
+    }
+
+    return value.trim();
+}
+
+function yValidDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+    }
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    return Number.isFinite(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value;
+}
+
+function yParseFilters(query) {
+    const filters = {
+        animalType: yReadQuery(query, 'animalType'),
+        foundLocation: yReadQuery(query, 'foundLocation'),
+        rescueStatus: yReadQuery(query, 'rescueStatus'),
+        adoptionStatus: yReadQuery(query, 'adoptionStatus'),
+        dateFrom: yReadQuery(query, 'dateFrom'),
+        dateTo: yReadQuery(query, 'dateTo'),
+        sort: yReadQuery(query, 'sort') || 'updated_desc'
+    };
+
+    const enums = [
+        ['animalType', labels.animalTypes],
+        ['rescueStatus', labels.rescueStatuses],
+        ['adoptionStatus', labels.adoptionStatuses]
+    ];
+
+    for (const [field, values] of enums) {
+        if (
+            filters[field] &&
+            !Object.hasOwn(values, filters[field])
+        ) {
+            throw yError(`${field} 参数无效`);
+        }
+    }
+
+    if (filters.foundLocation.length > 200) {
+        throw yError('发现地点不能超过200个字符');
+    }
+
+    if (!Object.hasOwn(Y_SORT_OPTIONS, filters.sort)) {
+        throw yError('排序方式无效');
+    }
+
+    for (const field of ['dateFrom', 'dateTo']) {
+        if (filters[field] && !yValidDate(filters[field])) {
+            throw yError(`${field} 日期格式无效`);
+        }
+    }
+
+    if (
+        filters.dateFrom &&
+        filters.dateTo &&
+        filters.dateFrom > filters.dateTo
+    ) {
+        throw yError('开始日期不能晚于结束日期');
+    }
+
+    const rawPage = yReadQuery(query, 'page');
+
+    if (
+        rawPage &&
+        (!/^[1-9]\d*$/.test(rawPage) ||
+            !Number.isSafeInteger(Number(rawPage)))
+    ) {
+        throw yError('页码必须是正整数');
+    }
+
+    return {
+        filters,
+        requestedPage: rawPage ? Number(rawPage) : 1
+    };
+}
+
+function yEscapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function yBuildMongoFilter(filters) {
+    const query = {};
+
+    for (const field of [
+        'animalType',
+        'rescueStatus',
+        'adoptionStatus'
+    ]) {
+        if (filters[field]) {
+            query[field] = filters[field];
+        }
+    }
+
+    if (filters.foundLocation) {
+        query.foundLocation = {
+            $regex: yEscapeRegex(filters.foundLocation),
+            $options: 'i'
+        };
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+        query.createdAt = {};
+
+        if (filters.dateFrom) {
+            query.createdAt.$gte = new Date(
+                `${filters.dateFrom}T00:00:00.000Z`
+            );
+        }
+
+        if (filters.dateTo) {
+            const nextDay = new Date(
+                `${filters.dateTo}T00:00:00.000Z`
+            );
+
+            nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+            query.createdAt.$lt = nextDay;
+        }
+    }
+
+    return query;
+}
+
+function yMatchMock(animal, filters) {
+    for (const field of [
+        'animalType',
+        'rescueStatus',
+        'adoptionStatus'
+    ]) {
+        if (filters[field] && animal[field] !== filters[field]) {
+            return false;
+        }
+    }
+
+    const location = String(animal.foundLocation || '');
+
+    if (
+        filters.foundLocation &&
+        !location.toLowerCase().includes(
+            filters.foundLocation.toLowerCase()
+        )
+    ) {
+        return false;
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+        const createdAt = new Date(animal.createdAt);
+
+        if (!Number.isFinite(createdAt.getTime())) {
+            return false;
+        }
+
+        const date = createdAt.toISOString().slice(0, 10);
+
+        if (filters.dateFrom && date < filters.dateFrom) {
+            return false;
+        }
+
+        if (filters.dateTo && date > filters.dateTo) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function ySortMock(animals, sort) {
+    const [[field, direction]] = Object.entries(
+        Y_SORT_OPTIONS[sort]
+    ).filter(([key]) => key !== 'animalCode');
+
+    return [...animals].sort((a, b) => {
+        const first = new Date(a[field]).getTime();
+        const second = new Date(b[field]).getTime();
+
+        const comparison = Number.isFinite(first) &&
+            Number.isFinite(second)
+            ? Math.sign(first - second)
+            : 0;
+
+        return comparison * direction ||
+            String(a.animalCode).localeCompare(
+                String(b.animalCode)
+            );
+    });
+}
+
+async function yQueryAnimals(query) {
+    const { filters, requestedPage } = yParseFilters(query);
+
+    let total;
+    let animals;
+
+    if (yUseMock()) {
+        const matches = demoAnimals.filter(
+            animal => yMatchMock(animal, filters)
+        );
+
+        total = matches.length;
+
+        const pageCount = Math.max(
+            1,
+            Math.ceil(total / Y_PAGE_SIZE)
+        );
+
+        const page = Math.min(requestedPage, pageCount);
+        const start = (page - 1) * Y_PAGE_SIZE;
+
+        animals = ySortMock(matches, filters.sort)
+            .slice(start, start + Y_PAGE_SIZE);
+
+        return {
+            filters,
+            animals,
+            total,
+            page,
+            pageCount,
+            pageSize: Y_PAGE_SIZE
+        };
+    }
+
+    const mongoFilter = yBuildMongoFilter(filters);
+
+    total = await YAnimal.countDocuments(mongoFilter);
+
+    const pageCount = Math.max(
+        1,
+        Math.ceil(total / Y_PAGE_SIZE)
+    );
+
+    const page = Math.min(requestedPage, pageCount);
+
+    animals = await YAnimal.find(mongoFilter)
+        .sort(Y_SORT_OPTIONS[filters.sort])
+        .skip((page - 1) * Y_PAGE_SIZE)
+        .limit(Y_PAGE_SIZE)
+        .lean();
+
+    return {
+        filters,
+        animals,
+        total,
+        page,
+        pageCount,
+        pageSize: Y_PAGE_SIZE
+    };
+}
+
+async function yQueryStats() {
+    const rescueCounts = Object.entries(
+        labels.rescueStatuses
+    ).map(([value, label]) => ({
+        value,
+        label,
+        count: 0
+    }));
+
+    const adoptionCounts = Object.entries(
+        labels.adoptionStatuses
+    ).map(([value, label]) => ({
+        value,
+        label,
+        count: 0
+    }));
+
+    if (yUseMock()) {
+        for (const animal of demoAnimals) {
+            const rescue = rescueCounts.find(
+                item => item.value === animal.rescueStatus
+            );
+
+            const adoption = adoptionCounts.find(
+                item => item.value === animal.adoptionStatus
+            );
+
+            if (rescue) {
+                rescue.count++;
+            }
+
+            if (adoption) {
+                adoption.count++;
+            }
+        }
+
+        return {
+            total: demoAnimals.length,
+            rescueCounts,
+            adoptionCounts,
+            animals: ySortMock(
+                demoAnimals,
+                'updated_desc'
+            ).slice(0, 3)
+        };
+    }
+
+    const [
+        total,
+        rescueGroups,
+        adoptionGroups,
+        animals
+    ] = await Promise.all([
+        YAnimal.countDocuments({}),
+
+        YAnimal.aggregate([
+            {
+                $group: {
+                    _id: '$rescueStatus',
+                    count: { $sum: 1 }
+                }
+            }
+        ]),
+
+        YAnimal.aggregate([
+            {
+                $group: {
+                    _id: '$adoptionStatus',
+                    count: { $sum: 1 }
+                }
+            }
+        ]),
+
+        YAnimal.find({})
+            .sort({
+                updatedAt: -1,
+                animalCode: 1
+            })
+            .limit(3)
+            .lean()
+    ]);
+
+    for (const group of rescueGroups) {
+        const item = rescueCounts.find(
+            entry => entry.value === group._id
+        );
+
+        if (item) {
+            item.count = group.count;
+        }
+    }
+
+    for (const group of adoptionGroups) {
+        const item = adoptionCounts.find(
+            entry => entry.value === group._id
+        );
+
+        if (item) {
+            item.count = group.count;
+        }
+    }
+
+    return {
+        total,
+        rescueCounts,
+        adoptionCounts,
+        animals
+    };
+}
+
+function yHandleError(error, req, res) {
+    if (error.status === 400) {
+        if (isApiRequest(req)) {
+            return sendApiError(
+                res,
+                400,
+                'VALIDATION_ERROR',
+                error.message
+            );
+        }
+
+        return res.status(400).render('info', {
+            title: '查询条件有误',
+            activePage: 'list',
+            message: error.message
+        });
+    }
+
+    console.error('Y 模块处理失败：', error.message);
+
+    if (isApiRequest(req)) {
+        return sendApiError(
+            res,
+            500,
+            'INTERNAL_ERROR',
+            '查询或统计失败'
+        );
+    }
+
+    return res.status(500).render('info', {
+        title: '请求失败',
+        activePage: '',
+        message: '页面暂时无法加载，请稍后重试。'
+    });
+}
+
+app.get('/', yDatabaseAvailable, async (req, res) => {
+    try {
+        const stats = await yQueryStats();
+
+        return res.render('dashboard', {
+            title: '首页统计',
+            activePage: 'home',
+            yPreview: yUseMock(),
+            ...stats
+        });
+    } catch (error) {
+        return yHandleError(error, req, res);
+    }
 });
 
-// Y 后续：GET /api/animals、GET /api/stats，避免 /api/animals/stats 被 :id 捕获。
-// Y 的查询/统计处理函数和接口从这里继续。
+app.get('/animals', yDatabaseAvailable, async (req, res) => {
+    try {
+        const result = await yQueryAnimals(req.query);
+
+        const pageUrl = number => {
+            const params = new URLSearchParams({
+                ...result.filters,
+                page: String(number)
+            });
+
+            return `/animals?${params.toString()}`;
+        };
+
+        return res.render('list', {
+            title: '动物列表',
+            activePage: 'list',
+            yPreview: yUseMock(),
+            pageUrl,
+            ...result
+        });
+    } catch (error) {
+        return yHandleError(error, req, res);
+    }
+});
+
+app.get('/api/animals', yDatabaseAvailable, async (req, res) => {
+    try {
+        const result = await yQueryAnimals(req.query);
+
+        return res.json({
+            success: true,
+            preview: yUseMock(),
+            data: result.animals,
+            filters: result.filters,
+            pagination: {
+                page: result.page,
+                pageSize: result.pageSize,
+                pageCount: result.pageCount,
+                total: result.total
+            }
+        });
+    } catch (error) {
+        return yHandleError(error, req, res);
+    }
+});
+
+app.get('/api/stats', yDatabaseAvailable, async (req, res) => {
+    try {
+        const stats = await yQueryStats();
+
+        return res.json({
+            success: true,
+            preview: yUseMock(),
+            data: stats
+        });
+    } catch (error) {
+        return yHandleError(error, req, res);
+    }
+});
+// ============================================================================
+
 
 // ============================================================================
 // 04 M 区｜救助负责人、进度、安置和跟进记录
