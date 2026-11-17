@@ -1,0 +1,163 @@
+
+/* Registration Date Range Calendar */
+
+.y-date-range-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 230px;
+}
+
+.y-range-trigger {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.y-range-calendar[hidden] {
+    display: none !important;
+}
+
+.y-range-calendar {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 100;
+    width: min(320px, 90vw);
+    padding: 14px;
+    background: #ffffff;
+    color: #222222;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+.y-range-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.y-range-toolbar button {
+    cursor: pointer;
+    padding: 5px 12px;
+}
+
+.y-range-weekdays,
+.y-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+    text-align: center;
+    margin-top: 8px;
+}
+
+.y-range-weekdays span {
+    padding: 5px 0;
+    font-size: 12px;
+    color: #666666;
+}
+
+.y-calendar-day {
+    min-width: 0;
+    padding: 9px 0;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.y-calendar-day:hover {
+    outline: 2px solid #3a82c5;
+}
+
+.y-calendar-day.y-range-middle {
+    background: #e2f0fb;
+}
+
+.y-calendar-day.y-range-edge {
+    background: #176aab;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.y-range-calendar p {
+    margin: 10px 0;
+    font-size: 12px;
+    color: #555555;
+}
+
+.y-range-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.y-range-actions button {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+/* Date range layout fixes */
+
+.filters .y-date-range-field {
+    flex: 1 1 220px;
+    min-width: 200px;
+    align-self: flex-end;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.filters .y-date-range-field > label {
+    flex: none;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1.65;
+    color: #52685c;
+}
+
+.filters .y-range-trigger {
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    padding: 9px 12px;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 400;
+    background: #fff;
+    border: 1px solid #dfe7e1;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.filters .y-range-trigger:hover {
+    border-color: #176b52;
+    background: #f8fbf9;
+}
+
+.filters .y-range-calendar {
+    top: calc(100% + 8px);
+}
+
+/* Keep date selection usable on smaller screens */
+@media (max-width: 600px) {
+    .filters .y-date-range-field {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .filters .y-range-calendar {
+        width: min(320px, 90vw);
+    }
+}

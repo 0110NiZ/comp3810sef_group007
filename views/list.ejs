@@ -70,25 +70,97 @@
             </select>
         </label>
 
-        <label>
-            登记开始日期
-            <input
-                type="date"
-                name="dateFrom"
-                value="<%= filters.dateFrom || '' %>"
-                aria-label="登记开始日期"
-            >
-        </label>
 
-        <label>
-            登记结束日期
-            <input
-                type="date"
-                name="dateTo"
-                value="<%= filters.dateTo || '' %>"
-                aria-label="登记结束日期"
-            >
-        </label>
+            <div class="y-date-range-field">
+                <label for="y-range-trigger">
+                    登记日期范围
+                </label>
+
+                <input
+                    type="hidden"
+                    name="dateFrom"
+                    id="y-date-from"
+                    value="<%= filters.dateFrom || '' %>"
+                >
+
+                <input
+                    type="hidden"
+                    name="dateTo"
+                    id="y-date-to"
+                    value="<%= filters.dateTo || '' %>"
+                >
+
+                <button
+                    type="button"
+                    id="y-range-trigger"
+                    class="y-range-trigger"
+                    aria-expanded="false"
+                    aria-controls="y-range-calendar"
+                >
+                    选择起止日期
+                </button>
+
+                <div
+                    id="y-range-calendar"
+                    class="y-range-calendar"
+                    hidden
+                >
+                    <div class="y-range-toolbar">
+                        <button
+                            type="button"
+                            id="y-prev-month"
+                            aria-label="上一个月"
+                        >
+                            ‹
+                        </button>
+
+                        <strong id="y-month-title"></strong>
+
+                        <button
+                            type="button"
+                            id="y-next-month"
+                            aria-label="下一个月"
+                        >
+                            ›
+                        </button>
+                    </div>
+
+                    <div class="y-range-weekdays">
+                        <span>一</span>
+                        <span>二</span>
+                        <span>三</span>
+                        <span>四</span>
+                        <span>五</span>
+                        <span>六</span>
+                        <span>日</span>
+                    </div>
+
+                    <div
+                        id="y-calendar-days"
+                        class="y-calendar-days"
+                    ></div>
+
+                    <p id="y-range-hint">
+                        先选开始日期，再选结束日期
+                    </p>
+
+                    <div class="y-range-actions">
+                        <button
+                            type="button"
+                            id="y-range-clear"
+                        >
+                            清除日期
+                        </button>
+
+                        <button
+                            type="button"
+                            id="y-range-done"
+                        >
+                            完成
+                        </button>
+                    </div>
+                </div>
+            </div>
 
         <label>
             排序方式
@@ -219,5 +291,6 @@
     </div>
 
 </section>
-
+<link rel="stylesheet" href="/date_range.css">
+<script src="/date_range.js" defer></script>
 <%- include('footer') %>

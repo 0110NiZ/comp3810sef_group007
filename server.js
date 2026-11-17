@@ -788,13 +788,13 @@ function yBuildMongoFilter(filters) {
 
         if (filters.dateFrom) {
             query.createdAt.$gte = new Date(
-                `${filters.dateFrom}T00:00:00.000Z`
+                `${filters.dateFrom}T00:00:00+08:00`
             );
         }
 
         if (filters.dateTo) {
             const nextDay = new Date(
-                `${filters.dateTo}T00:00:00.000Z`
+                `${filters.dateTo}T00:00:00+08:00`
             );
 
             nextDay.setUTCDate(nextDay.getUTCDate() + 1);
@@ -835,7 +835,9 @@ function yMatchMock(animal, filters) {
             return false;
         }
 
-        const date = createdAt.toISOString().slice(0, 10);
+        const date = new Date(
+            createdAt.getTime() + 8 * 60 * 60 * 1000
+        ).toISOString().slice(0, 10);
 
         if (filters.dateFrom && date < filters.dateFrom) {
             return false;
