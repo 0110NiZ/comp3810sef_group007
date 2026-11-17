@@ -5,6 +5,8 @@ const schema = new mongoose.Schema({
     passwordHash: { type: String, required: true, select: false },
     displayName: { type: String, required: true, trim: true },
     phone: { type: String, default: '', trim: true },
-    role: { type: String, enum: Object.keys(roles), default: 'staff' }
+    role: { type: String, enum: Object.keys(roles), default: 'staff' },
+    // T 的用户管理使用停用，不删除历史用户引用。
+    isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 module.exports = mongoose.model('User', schema);
