@@ -1156,378 +1156,583 @@ app.get('/api/stats', requireLogin, yDatabaseAvailable, async (req, res) => {
 // ============================================================================
 
 
+
 // ============================================================================
 // 04 M 区｜救助负责人、进度、安置和跟进记录
 // ============================================================================
-// 分支 feature/m-rescue；维护 Animal 救助字段及 FollowUp，严格遵守课堂与项目约定。
 
-// 辅助工具：获取当前操作人员 ID
-function getStaffUserId(req) {
-    if (req.session && req.session.userId) {
-        return req.session.userId;
-    }
-    // 未接入正式登录前，使用虚构的成员 M 账号 ID 作为测试回退
-    return '000000000000000000000002';
-}
-
-// 救助进度顺序权重（确保进度单向推进，不能倒退）
+// 救助进度只允许向前推进
 const RESCUE_STAGE = {
     pending: 1,
     rescuing: 2,
     placed: 3
 };
 
-// --------------------------- 1. 救助管理（页面与操作） ---------------------------
+// 统一参数错误
+function mFail(status, message) {
+    const error = new Error(message);
+    error.mStatus = status;
+    throw error;
+}
 
-// GET /animals/:id/rescue - 渲染救助状态修改页面
-app.get('/animals/:id/rescue', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到这条动物记录。' });
+// 验证 MongoDB ObjectId
+function mId(value) {
+    if (
+        typeof value !== 'string' ||
+        !/^[a-fA-F0-9]{24}$/.test(value)
+    ) {
+        mFail(400, '记录 ID 格式不正确');
+    }
+
+    return value;
+}
+
+// 验证输入，避免对象、数组和超长字符串
+function mText(body, field, maxLength, required = true) {
+    const value = body?.[field];
+
+    if (!required && value === undefined) {
+        return '';
+    }
+
+    if (typeof value !== 'string') {
+        mFail(400, `${field} 必须是字符串`);
+    }
+
+    const result = value.trim();
+
+    if ((required && !result) || result.length > maxLength) {
+        mFail(400, `${field} 不能为空或超过长度限制`);
+    }
+
+    return result;
+}
+
+// 真实登录用户，禁止使用固定测试 ObjectId
+function getStaffUserId(req) {
+    if (!req.user?._id) {
+        mFail(401, '请先登录');
+    }
+
+    return req.user._id;
+}
+
+// 只有作者或管理员有权编辑、删除跟进
+function mCanManageFollowUp(req, followUp) {
+    if (!req.user || !followUp) return false;
+
+    return req.user.role === 'admin' ||
+        String(followUp.recordedBy) === String(req.user._id);
+}
+
+// 统一错误响应
+function mHandleError(error, req, res) {
+    let status = error.mStatus || 500;
+    let message = error.mStatus
+        ? error.message
+        : '服务器处理请求失败';
+
+    if (error.name === 'CastError') {
+        status = 400;
+        message = '记录 ID 格式不正确';
+    }
+
+    if (error.name === 'ValidationError') {
+        status = 400;
+        message = '输入资料不符合数据库格式要求';
+    }
+
+    if (status === 500) {
+        console.error('M 模块错误:', error);
+    }
+
+    if (isApiRequest(req)) {
+        return sendApiError(
+            res,
+            status,
+            status === 403 ? 'FORBIDDEN' : 'REQUEST_FAILED',
+            message
+        );
+    }
+
+    return res.status(status).render('info', {
+        title: '操作失败',
+        activePage: 'list',
+        message
+    });
+}
+
+// 查询动物
+async function mGetAnimal(id) {
+    mId(id);
+
+    const animal = await Animal.findById(id);
+
+    if (!animal) {
+        mFail(404, '动物记录不存在');
+    }
+
+    return animal;
+}
+
+// 已结案动物不可再进行救助、跟进写操作
+function mRequireOpen(animal) {
+    if (animal.closedAt || animal.adoptionStatus === 'adopted') {
+        mFail(403, '动物档案已结案，不能继续修改');
+    }
+}
+
+// ---------------------- Rescue Management ----------------------
+
+// 救助管理页面
+app.get(
+    '/animals/:id/rescue',
+    requireLogin,
+    async (req, res) => {
+        try {
+            const animal = await mGetAnimal(req.params.id);
+
+            const users = await User.find({
+                role: { $in: ['staff', 'admin'] },
+                isActive: { $ne: false }
+            })
+                .select('_id displayName role')
+                .sort({ displayName: 1 })
+                .lean();
+
+            return res.render('rescue', {
+                title: '救助管理',
+                activePage: 'list',
+                animal,
+                users,
+                adoption: null
+            });
+        } catch (error) {
+            return mHandleError(error, req, res);
         }
+    }
+);
 
-        // 查询所有工作人员供下拉菜单选择负责人
-        let users = await User.find({});
-        if (!users || users.length === 0) {
-            users = demoUsers; // 回退使用 demoUsers 保证页面正常展示
-        }
+// 网页和 API 共享救助更新逻辑
+async function mUpdateRescue(req) {
+    const animal = await mGetAnimal(req.params.id);
+    mRequireOpen(animal);
 
-        res.status(200).render('rescue', {
-            title: '救助管理',
-            activePage: 'list',
-            animal: animal,
-            users: users,
-            adoption: null
+    const newStatus = mText(req.body, 'rescueStatus', 20);
+
+    if (!Object.hasOwn(RESCUE_STAGE, newStatus)) {
+        mFail(400, '无效的救助进度');
+    }
+
+    const currentRank = RESCUE_STAGE[animal.rescueStatus];
+    const targetRank = RESCUE_STAGE[newStatus];
+
+    if (targetRank < currentRank) {
+        mFail(400, '救助进度只能向前推进，不能回退');
+    }
+
+    // 未提交字段时保留原值；明确提交空值表示清空负责人
+    const assignedInput = req.body?.assignedTo;
+
+    if (
+        assignedInput !== undefined &&
+        typeof assignedInput !== 'string'
+    ) {
+        mFail(400, '负责人格式不正确');
+    }
+
+    const assignedTo = assignedInput === undefined
+        ? animal.assignedTo
+        : assignedInput.trim() || null;
+
+    const locationInput = req.body?.placementLocation;
+
+    if (
+        locationInput !== undefined &&
+        typeof locationInput !== 'string'
+    ) {
+        mFail(400, '安置地点格式不正确');
+    }
+
+    const placementLocation = locationInput === undefined
+        ? animal.placementLocation
+        : locationInput.trim();
+
+    if (placementLocation.length > 200) {
+        mFail(400, '安置地点不能超过200个字符');
+    }
+
+    if (assignedTo) {
+        const userId = mId(String(assignedTo));
+
+        const userExists = await User.exists({
+            _id: userId,
+            role: { $in: ['staff', 'admin'] },
+            isActive: { $ne: false }
         });
-    } catch (err) {
-        console.error('获取救助管理页面出错:', err);
-        res.status(500).render('info', { title: '服务器错误', activePage: 'list', message: '加载救助页面失败。' });
+
+        if (!userExists) {
+            mFail(400, '负责人不存在或账号已停用');
+        }
     }
-});
 
-// POST /animals/:id/rescue - 网页表单提交更新救助状态
-app.post('/animals/:id/rescue', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到动物记录。' });
-        }
+    if (
+        (newStatus === 'rescuing' || newStatus === 'placed') &&
+        !assignedTo
+    ) {
+        mFail(400, '进入救助中或已安置必须指定负责人');
+    }
 
-        // 结案保护：已结案不可修改救助资料
-        if (animal.closedAt || animal.adoptionStatus === 'adopted') {
-            return res.status(403).render('info', { title: '禁止操作', activePage: 'list', message: '该动物档案已结案，无法修改救助进度。' });
-        }
+    if (newStatus === 'placed' && !placementLocation) {
+        mFail(400, '进入已安置必须填写安置地点');
+    }
 
-        const newStatus = req.body.rescueStatus;
-        const newAssignedTo = req.body.assignedTo ? req.body.assignedTo : null;
-        const newPlacement = req.body.placementLocation ? req.body.placementLocation.trim() : '';
-
-        // 校验 1：救助进度不能倒退
-        const currentRank = RESCUE_STAGE[animal.rescueStatus] || 1;
-        const targetRank = RESCUE_STAGE[newStatus] || 1;
-        if (targetRank < currentRank) {
-            return res.status(400).render('info', { title: '操作被拒绝', activePage: 'list', message: '救助进度只能单向推进，不允许回退。' });
-        }
-
-        // 校验 2：进入 rescuing 必须有负责人
-        if (newStatus === 'rescuing' && !newAssignedTo && !animal.assignedTo) {
-            return res.status(400).render('info', { title: '缺少负责人', activePage: 'list', message: '推进到“救助中”必须指定负责人。' });
-        }
-
-        // 校验 3：进入 placed 必须有负责人和安置地点
-        if (newStatus === 'placed') {
-            const hasAssignee = newAssignedTo || animal.assignedTo;
-            const place = newPlacement || animal.placementLocation;
-            if (!hasAssignee || !place) {
-                return res.status(400).render('info', { title: '信息不全', activePage: 'list', message: '推进到“已安置”必须有负责人及安置地点。' });
+    // 条件更新，防止覆盖已经结案或状态已改变的记录
+    const updated = await Animal.findOneAndUpdate(
+        {
+            _id: animal._id,
+            rescueStatus: animal.rescueStatus,
+            closedAt: null,
+            adoptionStatus: { $ne: 'adopted' }
+        },
+        {
+            $set: {
+                rescueStatus: newStatus,
+                assignedTo,
+                placementLocation
             }
-            animal.placementLocation = place;
+        },
+        {
+            new: true,
+            runValidators: true
         }
+    );
 
-        animal.rescueStatus = newStatus;
-        if (newAssignedTo) {
-            animal.assignedTo = newAssignedTo;
-        }
-        await animal.save();
-
-        res.redirect('/animals/' + animalId);
-    } catch (err) {
-        console.error('更新救助状态出错:', err);
-        res.status(500).render('info', { title: '更新失败', activePage: 'list', message: '更新救助信息出错。' });
+    if (!updated) {
+        mFail(409, '档案状态已变化，请刷新后重试');
     }
-});
 
-// PUT /api/animals/:id/rescue - RESTful API 更新救助状态 (纯 JSON)
-app.put('/api/animals/:id/rescue', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).type('json').json({ success: false, error: '未找到该动物记录' }).end();
+    return updated;
+}
+
+// 网页更新救助信息
+app.post(
+    '/animals/:id/rescue',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            await mUpdateRescue(req);
+            return res.redirect(303, '/animals/' + req.params.id);
+        } catch (error) {
+            return mHandleError(error, req, res);
         }
-
-        if (animal.closedAt || animal.adoptionStatus === 'adopted') {
-            return res.status(403).type('json').json({ success: false, error: '该动物档案已结案，无法修改' }).end();
-        }
-
-        const newStatus = req.body.rescueStatus;
-        if (!newStatus || !RESCUE_STAGE[newStatus]) {
-            return res.status(400).type('json').json({ success: false, error: 'rescueStatus 参数无效' }).end();
-        }
-
-        const currentRank = RESCUE_STAGE[animal.rescueStatus] || 1;
-        const targetRank = RESCUE_STAGE[newStatus];
-        if (targetRank < currentRank) {
-            return res.status(400).type('json').json({ success: false, error: '救助进度只能单向推进，不允许回退' }).end();
-        }
-
-        if (newStatus === 'rescuing' && !req.body.assignedTo && !animal.assignedTo) {
-            return res.status(400).type('json').json({ success: false, error: '进入 rescuing 状态必须提供 assignedTo' }).end();
-        }
-
-        if (newStatus === 'placed') {
-            const hasAssignee = req.body.assignedTo || animal.assignedTo;
-            const place = req.body.placementLocation || animal.placementLocation;
-            if (!hasAssignee || !place) {
-                return res.status(400).type('json').json({ success: false, error: '进入 placed 状态必须具备负责人和安置地点' }).end();
-            }
-            animal.placementLocation = String(place).trim();
-        }
-
-        animal.rescueStatus = newStatus;
-        if (req.body.assignedTo) animal.assignedTo = req.body.assignedTo;
-        await animal.save();
-
-        res.status(200).type('json').json({ success: true, message: '救助状态更新成功', data: animal }).end();
-    } catch (err) {
-        console.error('API 救助更新出错:', err);
-        res.status(500).type('json').json({ success: false, error: '服务器内部错误' }).end();
     }
-});
+);
 
+// REST API 更新救助信息
+app.put(
+    '/api/animals/:id/rescue',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            const animal = await mUpdateRescue(req);
 
-// --------------------------- 2. 跟进记录 CRUD (FollowUp) ---------------------------
+            return res.json({
+                success: true,
+                message: '救助信息更新成功',
+                data: animal
+            });
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    }
+);
 
-// 页面路由：新增/编辑/删除跟进页面统一处理
-app.get('/animals/:id/followups/new', (req, res) => renderFollowUpView(req, res, 'create'));
-app.get('/animals/:id/followups/:followId/edit', (req, res) => renderFollowUpView(req, res, 'edit'));
-app.get('/animals/:id/followups/:followId/delete', (req, res) => renderFollowUpView(req, res, 'delete'));
+// ---------------------- Follow-up Management ----------------------
 
+// 新增、编辑、删除确认页面
 async function renderFollowUpView(req, res, mode) {
     try {
-        const animalId = req.params.id;
-        const followId = req.params.followId;
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到动物记录。' });
-        }
+        const animal = await mGetAnimal(req.params.id);
+        mRequireOpen(animal);
 
         let followUp = null;
+
         if (mode !== 'create') {
-            followUp = await FollowUp.findOne({ _id: followId, animalId: animalId });
+            const followId = mId(req.params.followId);
+
+            followUp = await FollowUp.findOne({
+                _id: followId,
+                animalId: animal._id
+            });
+
             if (!followUp) {
-                return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到该跟进记录或记录不属于该动物。' });
+                mFail(404, '跟进记录不存在');
+            }
+
+            if (!mCanManageFollowUp(req, followUp)) {
+                mFail(403, '只有记录作者或管理员可以操作');
             }
         }
 
-        const pageTitles = {
+        const titles = {
             create: '添加跟进记录',
             edit: '编辑跟进记录',
             delete: '删除跟进记录'
         };
 
-        res.status(200).render('followup', {
-            title: pageTitles[mode],
+        return res.render('followup', {
+            title: titles[mode],
             activePage: 'list',
-            mode: mode,
-            animal: animal,
-            followUp: followUp
+            animal,
+            mode,
+            followUp
         });
-    } catch (err) {
-        console.error('加载跟进页面出错:', err);
-        res.status(500).render('info', { title: '错误', activePage: 'list', message: '加载跟进页面出错。' });
+    } catch (error) {
+        return mHandleError(error, req, res);
     }
 }
 
-// POST /animals/:id/followups/new - 网页添加跟进
-app.post('/animals/:id/followups/new', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const content = req.body.content ? req.body.content.trim() : '';
-        if (!content) {
-            return res.status(400).render('info', { title: '参数缺失', activePage: 'list', message: '跟进内容不能为空。' });
-        }
+app.get(
+    '/animals/:id/followups/new',
+    requireLogin,
+    (req, res) => renderFollowUpView(req, res, 'create')
+);
 
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '动物不存在。' });
-        }
-        if (animal.closedAt || animal.adoptionStatus === 'adopted') {
-            return res.status(403).render('info', { title: '禁止写入', activePage: 'list', message: '已结案动物档案不可追加跟进记录。' });
-        }
+app.get(
+    '/animals/:id/followups/:followId/edit',
+    requireLogin,
+    (req, res) => renderFollowUpView(req, res, 'edit')
+);
 
-        await FollowUp.create({
-            animalId: animalId,
-            content: content,
-            recordedBy: getStaffUserId(req)
-        });
+app.get(
+    '/animals/:id/followups/:followId/delete',
+    requireLogin,
+    (req, res) => renderFollowUpView(req, res, 'delete')
+);
 
-        res.redirect('/animals/' + animalId);
-    } catch (err) {
-        console.error('网页添加跟进出错:', err);
-        res.status(500).render('info', { title: '错误', activePage: 'list', message: '保存跟进记录失败。' });
+// 新增跟进，共享业务逻辑
+async function mCreateFollowUp(req) {
+    const animal = await mGetAnimal(req.params.id);
+    mRequireOpen(animal);
+
+    const content = mText(req.body, 'content', 2000);
+
+    return FollowUp.create({
+        animalId: animal._id,
+        content,
+        recordedBy: getStaffUserId(req)
+    });
+}
+
+// 网页新增
+app.post(
+    '/animals/:id/followups/new',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            await mCreateFollowUp(req);
+            return res.redirect(303, '/animals/' + req.params.id);
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
     }
-});
+);
 
-// POST /animals/:id/followups/:followId/edit - 网页修改跟进
-app.post('/animals/:id/followups/:followId/edit', async function(req, res) {
-    try {
-        const { id, followId } = req.params;
-        const content = req.body.content ? req.body.content.trim() : '';
-        if (!content) {
-            return res.status(400).render('info', { title: '参数缺失', activePage: 'list', message: '跟进内容不能为空。' });
+// API 查询跟进列表
+app.get(
+    '/api/animals/:id/followups',
+    requireLogin,
+    async (req, res) => {
+        try {
+            const animal = await mGetAnimal(req.params.id);
+
+            const records = await FollowUp.find({
+                animalId: animal._id
+            }).sort({ createdAt: -1, _id: -1 });
+
+            return res.json(records);
+        } catch (error) {
+            return mHandleError(error, req, res);
         }
-
-        const animal = await Animal.findById(id);
-        if (!animal || animal.closedAt) {
-            return res.status(403).render('info', { title: '禁止操作', activePage: 'list', message: '动物档案已结案或不存在。' });
-        }
-
-        const followUp = await FollowUp.findOne({ _id: followId, animalId: id });
-        if (!followUp) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '跟进记录不存在。' });
-        }
-
-        followUp.content = content;
-        followUp.updatedBy = getStaffUserId(req);
-        await followUp.save();
-
-        res.redirect('/animals/' + id);
-    } catch (err) {
-        console.error('网页编辑跟进出错:', err);
-        res.status(500).render('info', { title: '错误', activePage: 'list', message: '修改跟进记录失败。' });
     }
-});
+);
 
-// POST /animals/:id/followups/:followId/delete - 网页删除跟进
-app.post('/animals/:id/followups/:followId/delete', async function(req, res) {
-    try {
-        const { id, followId } = req.params;
-        const animal = await Animal.findById(id);
-        if (!animal || animal.closedAt) {
-            return res.status(403).render('info', { title: '禁止操作', activePage: 'list', message: '动物档案已结案或不存在。' });
+// API 新增
+app.post(
+    '/api/animals/:id/followups',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            const record = await mCreateFollowUp(req);
+            return res.status(201).json(record);
+        } catch (error) {
+            return mHandleError(error, req, res);
         }
-
-        const result = await FollowUp.findOneAndDelete({ _id: followId, animalId: id });
-        if (!result) {
-            return res.status(404).render('info', { title: '记录不存在', activePage: 'list', message: '未找到要删除的记录。' });
-        }
-
-        res.redirect('/animals/' + id);
-    } catch (err) {
-        console.error('网页删除跟进出错:', err);
-        res.status(500).render('info', { title: '错误', activePage: 'list', message: '删除跟进失败。' });
     }
-});
+);
 
+// 编辑跟进，共享业务逻辑
+async function mUpdateFollowUp(req) {
+    const animal = await mGetAnimal(req.params.id);
+    mRequireOpen(animal);
 
-// --------------------------- 3. 跟进记录 RESTful API (对齐 Lab09 规范) ---------------------------
+    const followId = mId(req.params.followId);
+    const content = mText(req.body, 'content', 2000);
 
-// GET /api/animals/:id/followups - READ 跟进列表
-app.get('/api/animals/:id/followups', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const list = await FollowUp.find({ animalId: animalId }).sort({ createdAt: -1 });
-        res.status(200).type('json').json(list).end();
-    } catch (err) {
-        res.status(500).type('json').json({ success: false, error: '查询跟进失败' }).end();
+    const followUp = await FollowUp.findOne({
+        _id: followId,
+        animalId: animal._id
+    });
+
+    // 先判断存在，再判断权限
+    if (!followUp) {
+        mFail(404, '跟进记录不存在');
     }
-});
 
-// POST /api/animals/:id/followups - CREATE 新增一条跟进
-app.post('/api/animals/:id/followups', async function(req, res) {
-    try {
-        const animalId = req.params.id;
-        const content = req.body.content ? req.body.content.trim() : '';
-        if (!content) {
-            return res.status(400).type('json').json({ success: false, error: 'content 不能为空' }).end();
-        }
-
-        const animal = await Animal.findById(animalId);
-        if (!animal) {
-            return res.status(404).type('json').json({ success: false, error: '动物不存在' }).end();
-        }
-        if (animal.closedAt || animal.adoptionStatus === 'adopted') {
-            return res.status(403).type('json').json({ success: false, error: '档案已结案，无法添加' }).end();
-        }
-
-        const newFollowUp = await FollowUp.create({
-            animalId: animalId,
-            content: content,
-            recordedBy: getStaffUserId(req)
-        });
-
-        res.status(201).type('json').json(newFollowUp).end();
-    } catch (err) {
-        res.status(500).type('json').json({ success: false, error: '创建跟进失败' }).end();
+    if (!mCanManageFollowUp(req, followUp)) {
+        mFail(403, '只有记录作者或管理员可以修改');
     }
-});
 
-// PUT /api/animals/:id/followups/:followId - UPDATE 修改跟进
-app.put('/api/animals/:id/followups/:followId', async function(req, res) {
-    try {
-        const { id, followId } = req.params;
-        const content = req.body.content ? req.body.content.trim() : '';
-        if (!content) {
-            return res.status(400).type('json').json({ success: false, error: 'content 不能为空' }).end();
-        }
+    const conditions = {
+        _id: followUp._id,
+        animalId: animal._id
+    };
 
-        const animal = await Animal.findById(id);
-        if (!animal || animal.closedAt) {
-            return res.status(403).type('json').json({ success: false, error: '档案已结案或不存在' }).end();
-        }
-
-        const followUp = await FollowUp.findOne({ _id: followId, animalId: id });
-        if (!followUp) {
-            return res.status(404).type('json').json({ success: false, error: '跟进记录不存在' }).end();
-        }
-
-        followUp.content = content;
-        followUp.updatedBy = getStaffUserId(req);
-        await followUp.save();
-
-        res.status(200).type('json').json(followUp).end();
-    } catch (err) {
-        res.status(500).type('json').json({ success: false, error: '更新跟进失败' }).end();
+    // 普通员工更新时再次限制作者，防止越权
+    if (req.user.role !== 'admin') {
+        conditions.recordedBy = req.user._id;
     }
-});
 
-// DELETE /api/animals/:id/followups/:followId - DELETE 删除跟进
-app.delete('/api/animals/:id/followups/:followId', async function(req, res) {
-    try {
-        const { id, followId } = req.params;
-        const animal = await Animal.findById(id);
-        if (!animal || animal.closedAt) {
-            return res.status(403).type('json').json({ success: false, error: '档案已结案或不存在' }).end();
+    const updated = await FollowUp.findOneAndUpdate(
+        conditions,
+        {
+            $set: {
+                content,
+                updatedBy: getStaffUserId(req)
+            }
+        },
+        {
+            new: true,
+            runValidators: true
         }
+    );
 
-        const deleted = await FollowUp.findOneAndDelete({ _id: followId, animalId: id });
-        if (!deleted) {
-            return res.status(404).type('json').json({ success: false, error: '记录不存在' }).end();
-        }
-
-        res.status(200).type('json').json({ success: true, message: '删除成功' }).end();
-    } catch (err) {
-        res.status(500).type('json').json({ success: false, error: '删除跟进失败' }).end();
+    if (!updated) {
+        mFail(409, '记录已变化，请刷新后重试');
     }
-});
 
-// M 后续：PUT /api/animals/:id/rescue；GET/POST /api/animals/:id/followups；
-// PUT/DELETE /api/animals/:id/followups/:followId。
-// 关联检查、作者/管理员权限及结案后限制，在真实写入接入时统一实现。
+    return updated;
+}
+
+// 网页编辑
+app.post(
+    '/animals/:id/followups/:followId/edit',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            await mUpdateFollowUp(req);
+            return res.redirect(303, '/animals/' + req.params.id);
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    }
+);
+
+// API 编辑
+app.put(
+    '/api/animals/:id/followups/:followId',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            const record = await mUpdateFollowUp(req);
+            return res.json(record);
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    }
+);
+
+// 删除跟进，共享业务逻辑
+async function mDeleteFollowUp(req) {
+    const animal = await mGetAnimal(req.params.id);
+    mRequireOpen(animal);
+
+    const followId = mId(req.params.followId);
+
+    const followUp = await FollowUp.findOne({
+        _id: followId,
+        animalId: animal._id
+    });
+
+    if (!followUp) {
+        mFail(404, '跟进记录不存在');
+    }
+
+    if (!mCanManageFollowUp(req, followUp)) {
+        mFail(403, '只有记录作者或管理员可以删除');
+    }
+
+    const conditions = {
+        _id: followUp._id,
+        animalId: animal._id
+    };
+
+    if (req.user.role !== 'admin') {
+        conditions.recordedBy = req.user._id;
+    }
+
+    const deleted = await FollowUp.findOneAndDelete(conditions);
+
+    if (!deleted) {
+        mFail(409, '记录已变化，请刷新后重试');
+    }
+
+    return deleted;
+}
+
+// 网页删除
+app.post(
+    '/animals/:id/followups/:followId/delete',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            await mDeleteFollowUp(req);
+            return res.redirect(303, '/animals/' + req.params.id);
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    }
+);
+
+// API 删除
+app.delete(
+    '/api/animals/:id/followups/:followId',
+    requireLogin,
+    requireCsrf,
+    async (req, res) => {
+        try {
+            await mDeleteFollowUp(req);
+
+            return res.json({
+                success: true,
+                message: '跟进记录删除成功'
+            });
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    }
+);
+
+// ============================================================================
+
 
 // ============================================================================
 // 05 N 区｜领养登记、结案与动物删除
