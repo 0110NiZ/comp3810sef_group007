@@ -616,10 +616,9 @@ async function lCreateTestUser() {
     } finally { await mongoose.disconnect(); }
 }
 
-
- // ============================================================================
- // 03 Y 区｜首页统计、动物列表、查询、分页与排序
- // ============================================================================
+// ============================================================================
+// 03 Y 区｜首页统计、动物列表、查询、分页与排序
+// ============================================================================
 
 const YAnimal = require('./models/Animal');
 
@@ -1078,7 +1077,7 @@ function yHandleError(error, req, res) {
     });
 }
 
-app.get('/', yDatabaseAvailable, async (req, res) => {
+app.get('/', requireLogin, yDatabaseAvailable, async (req, res) => {
     try {
         const stats = await yQueryStats();
 
@@ -1093,7 +1092,7 @@ app.get('/', yDatabaseAvailable, async (req, res) => {
     }
 });
 
-app.get('/animals', yDatabaseAvailable, async (req, res) => {
+app.get('/animals', requireLogin, yDatabaseAvailable, async (req, res) => {
     try {
         const result = await yQueryAnimals(req.query);
 
@@ -1118,7 +1117,7 @@ app.get('/animals', yDatabaseAvailable, async (req, res) => {
     }
 });
 
-app.get('/api/animals', yDatabaseAvailable, async (req, res) => {
+app.get('/api/animals', requireLogin, yDatabaseAvailable, async (req, res) => {
     try {
         const result = await yQueryAnimals(req.query);
 
@@ -1139,7 +1138,7 @@ app.get('/api/animals', yDatabaseAvailable, async (req, res) => {
     }
 });
 
-app.get('/api/stats', yDatabaseAvailable, async (req, res) => {
+app.get('/api/stats', requireLogin, yDatabaseAvailable, async (req, res) => {
     try {
         const stats = await yQueryStats();
 
