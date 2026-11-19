@@ -4,10 +4,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Staff Sign In · Pawhaven</title>
+    <title>Staff Sign In · Animal Rescue Center</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/icons.css">
     <link rel="stylesheet" href="/workspace.css">
+    <link rel="stylesheet" href="/cozy-theme.css">
 </head>
 
 <body class="login-body">
@@ -18,7 +19,7 @@
             <a class="brand" href="/">
                 <span class="brand-mark"><%- include('icon', { name: 'paw' }) %></span>
                 <span>
-                    Pawhaven
+                    Animal Rescue Center
                     <small>Rescue & Adoption</small>
                 </span>
             </a>
@@ -40,7 +41,7 @@
                     Help every animal find a home.
                 </p>
 
-                <%- include('pet-pair') %>
+                <img class="login-companions" src="/assets/companions.svg" alt="" aria-hidden="true">
             </div>
 
             <span class="story-bottom">

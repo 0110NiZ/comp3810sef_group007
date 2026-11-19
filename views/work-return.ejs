@@ -1,0 +1,5 @@
+<% if (typeof workReturn === 'string' && workReturn) { %>
+<div class="work-return">
+    <a class="text-link" href="<%= workReturn %>">← Back to <%= workAreaKey === 'rescue' ? 'Rescue Management' : workAreaKey === 'followups' ? 'Follow-up Records' : 'Adoption Management' %></a>
+</div>
+<% } %>

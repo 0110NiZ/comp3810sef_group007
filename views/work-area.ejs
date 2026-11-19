@@ -1,0 +1,108 @@
+<%- include('header') %>
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">CARE WORKSPACE</span>
+        <h1><%= area.title %></h1>
+        <p><%= area.description %></p>
+    </div>
+    <% if (area.key === 'followups' && tab !== 'new') { %>
+    <a class="button primary" href="<%= urlFor('new') %>">＋ Add Follow-up</a>
+    <% } %>
+</div>
+<nav class="work-tabs" aria-label="Workspace categories">
+    <% area.tabs.forEach(([key, label]) => { %>
+    <a class="button <%= tab === key ? 'primary' : '' %>" href="<%= urlFor(key) %>"
+        <%- tab === key ? 'aria-current="page"' : '' %>><%= label %></a>
+    <% }) %>
+</nav>
+<form class="panel work-search" method="get" action="<%= basePath %>">
+    <input type="hidden" name="tab" value="<%= tab %>">
+    <label>Find an Animal
+        <input name="q" maxlength="100" value="<%= q %>" placeholder="Animal code or description">
+    </label>
+    <button class="primary" type="submit">Search</button>
+    <a class="button" href="<%= basePath %>?tab=<%= tab %>">Reset</a>
+    <span class="muted"><%= total %> <%= animalRows ? 'animals' : 'records' %></span>
+</form>
+<% if (!rows.length) { %>
+<section class="panel work-empty">
+    <span class="heading-icon"><%- include('icon', { name: area.key === 'followups' ? 'notes' : 'home' }) %></span>
+    <h2><%= q ? 'No matching records' : area.key === 'rescue' && tab !== 'archived' ? 'No active cases in this category' : 'Nothing here yet' %></h2>
+    <p><%= q ? 'Try another animal code or description.' : 'Records will appear here when they reach this stage.' %></p>
+    <% if (area.key === 'rescue') { %>
+    <a class="button" href="<%= urlFor('archived') %>">View Archived Cases</a>
+    <% } %>
+    <a class="button" href="/animals">Browse Animal Records</a>
+</section>
+<% } %>
+<div class="work-records <%= area.key === 'followups' && !animalRows ? 'journal-feed' : '' %>">
+    <% rows.forEach(row => {
+        const animal = animalRows ? row : row.animalId;
+        if (!animal) return;
+        const closed = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted';
+        const applicationStatus = !animalRows && area.key === 'adoption' ?
+            (row.cancelledAt ? 'cancelled' : row.completedAt ? 'adopted' : 'processing') : null;
+        const canEdit = !closed && (currentUser.role === 'admin' ||
+            String(row.recordedBy?._id || row.recordedBy) === String(currentUser._id));
+    %>
+    <article class="panel work-record">
+        <header class="work-record-heading">
+            <div>
+                <span class="eyebrow"><%= animal.animalCode %></span>
+                <h2><%= animal.appearance %></h2>
+            </div>
+            <span class="badge status-<%= applicationStatus || (area.key === 'adoption' ? animal.adoptionStatus : animal.rescueStatus) %>">
+                <%= applicationStatus ? (applicationStatus === 'cancelled' ? 'Cancelled' : applicationStatus === 'adopted' ? 'Completed · Read-only' : 'In Progress') : closed ? 'Archived · Read-only' : area.key === 'adoption' ? labels.adoptionStatuses[animal.adoptionStatus] : labels.rescueStatuses[animal.rescueStatus] %>
+            </span>
+        </header>
+        <% if (area.key === 'rescue') { %>
+        <dl class="work-facts">
+            <dt>Responsible Staff</dt><dd><%= row.assignedTo?.displayName || 'Unassigned' %></dd>
+            <dt>Placement</dt><dd><%= animal.placementLocation || 'Not arranged' %></dd>
+            <dt>Health</dt><dd><%= animal.healthStatus %></dd>
+        </dl>
+        <% } else if (area.key === 'followups' && !animalRows) { %>
+        <p class="journal-meta"><%= row.recordedBy?.displayName || 'Account unavailable' %> · <%= formatDate(row.createdAt) %></p>
+        <p class="journal-content"><%= row.content %></p>
+        <% if (String(row.updatedAt) !== String(row.createdAt)) { %>
+        <small class="muted">Last edited <%= formatDate(row.updatedAt) %></small>
+        <% } %>
+        <% } else if (area.key === 'adoption' && !animalRows) { %>
+        <dl class="work-facts">
+            <dt>Adopter</dt><dd><%= row.adopterName %></dd>
+            <dt>Phone</dt><dd><%= row.adopterPhone %></dd>
+            <dt>Application</dt><dd><%= tab === 'cancelled' ? 'Cancelled' : tab === 'completed' ? 'Completed' : 'In Progress' %></dd>
+            <dt>Registered</dt><dd><%= formatDate(row.createdAt) %></dd>
+            <% if (row.cancelledAt) { %>
+            <dt>Cancellation Reason</dt><dd><%= row.cancellationReason %></dd>
+            <% } %>
+        </dl>
+        <% } else { %>
+        <p><%= animal.healthStatus %></p>
+        <p class="muted">Placement: <%= animal.placementLocation || 'Not arranged' %></p>
+        <% } %>
+        <footer class="actions work-record-actions">
+            <% if (area.key === 'rescue' && !closed) { %>
+            <a class="button primary" href="/animals/<%= animal._id %>/rescue">Update Rescue</a>
+            <a class="button" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+            <% } else if (area.key === 'followups' && animalRows && !closed) { %>
+            <a class="button primary" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+            <% } else if (area.key === 'followups' && !animalRows && canEdit) { %>
+            <a class="button" href="/animals/<%= animal._id %>/followups/<%= row._id %>/edit">Edit Entry</a>
+            <a class="button danger-text" href="/animals/<%= animal._id %>/followups/<%= row._id %>/delete">Delete Entry</a>
+            <% } else if (area.key === 'adoption' && !closed && !['cancelled', 'completed'].includes(tab)) { %>
+            <a class="button primary" href="/animals/<%= animal._id %>/adoption"><%= tab === 'processing' ? 'Continue Application' : tab === 'available' ? 'Register Adopter' : 'Review Availability' %></a>
+            <% } %>
+            <a class="text-link" href="/animals/<%= animal._id %><%= area.key === 'followups' ? '#care-journal' : area.key === 'adoption' ? '#adoption-history' : '' %>">View Animal Record</a>
+        </footer>
+    </article>
+    <% }) %>
+</div>
+<nav class="pagination" aria-label="Workspace pages">
+    <span>Page <%= page %> of <%= pageCount %> · 10 per page</span>
+    <div>
+        <% if (page > 1) { %><a class="button" href="<%= urlFor(tab, page - 1) %>">Previous</a><% } %>
+        <% if (page < pageCount) { %><a class="button" href="<%= urlFor(tab, page + 1) %>">Next</a><% } %>
+    </div>
+</nav>
+<%- include('footer') %>

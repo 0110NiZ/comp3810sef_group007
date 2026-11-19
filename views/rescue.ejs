@@ -1,5 +1,9 @@
 <%- include('header') %>
+<%- include('work-return') %>
 
+<% if (typeof rescueSaved !== 'undefined' && rescueSaved) { %>
+<p class="form-feedback" role="status">Rescue changes saved. You can continue updating care here.</p>
+<% } %>
 <div class="page-heading">
     <div>
         <span class="eyebrow">RESCUE CARE</span>

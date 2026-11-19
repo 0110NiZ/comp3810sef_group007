@@ -17,6 +17,7 @@ const {
 const cookieSession = require('cookie-session');
 const labels = require('./models/constants');
 const Animal = require('./models/Animal');
+const { nextAnimalCode, migrateAnimalCodes } = require('./services/animal-codes');
 const FollowUp = require('./models/FollowUp');
 const User = require('./models/User');
 const app = express();
@@ -120,6 +121,21 @@ function sendApiError(res, status, code, message) {
 }
 
 app.locals.labels = labels;
+
+// Remember each work area's last filter without accepting arbitrary return URLs.
+app.use((req, res, next) => {
+    const category = /\/followups(?:\/|$)/.test(req.path) ? 'followups' :
+        /\/(adoption|close)(?:\/|$)/.test(req.path) ? 'adoption' :
+        /\/rescue$/.test(req.path) ? 'rescue' : '';
+    const defaults = {
+        rescue: '/rescue-management', followups: '/followup-records', adoption: '/adoption-management'
+    };
+    res.locals.workAreaKey = category;
+    res.locals.workReturn = category ? req.session?.workReturns?.[category] || defaults[category] : '';
+    res.locals.rescueSaved = category === 'rescue' && req.query.saved === '1';
+    next();
+});
+
 app.locals.formatDate = (value) => value ? new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Hong_Kong',
     dateStyle: 'medium',
@@ -768,7 +784,7 @@ async function lCreate(req, res, next) {
 
         const animal = await LAnimal.create({
             ...values,
-            animalCode: 'A007-' + randomBytes(16).toString('hex').toUpperCase(),
+            animalCode: await nextAnimalCode(),
             createdBy: req.user._id,
             rescueStatus: 'pending',
             assignedTo: null,
@@ -1325,9 +1341,19 @@ app.get('/', requireLogin, yDatabaseAvailable, async (req, res) => {
     }
 });
 
-app.get('/animals', requireLogin, yDatabaseAvailable, async (req, res) => {
+app.get('/animals',
+    requireLogin, yDatabaseAvailable, async (req, res) => {
     try {
         const result = await yQueryAnimals(req.query);
+        const workspaceMode = {
+            '/rescue-management': 'rescue',
+            '/followup-records': 'followups',
+            '/adoption-management': 'adoption'
+        }[req.path] || 'list';
+        const workspaceTitles = {
+            list: 'Animal Records', rescue: 'Rescue Management',
+            followups: 'Follow-up Records', adoption: 'Adoption Management'
+        };
 
         const pageUrl = number => {
             const params = new URLSearchParams({
@@ -1335,14 +1361,96 @@ app.get('/animals', requireLogin, yDatabaseAvailable, async (req, res) => {
                 page: String(number)
             });
 
-            return `/animals?${params.toString()}`;
+            return `${req.path}?${params.toString()}`;
         };
 
         return res.render('list', {
-            title: 'Animal List',
-            activePage: 'list',
+            title: workspaceTitles[workspaceMode],
+            activePage: workspaceMode,
+            workspaceMode,
+            listPath: req.path,
             pageUrl,
             ...result
+        });
+    } catch (error) {
+        return yHandleError(error, req, res);
+    }
+});
+
+const workAreas = {
+    '/rescue-management': {
+        key: 'rescue', title: 'Rescue Management',
+        description: 'Coordinate active cases, responsible staff and placement.',
+        tabs: [['active', 'Active Cases'], ['pending', 'Pending Rescue'], ['rescuing', 'In Rescue'],
+            ['placed', 'Placed'], ['archived', 'Archived']], defaultTab: 'active'
+    },
+    '/followup-records': {
+        key: 'followups', title: 'Follow-up Records',
+        description: 'Read the care journal across animals. Each entry is a recorded observation.',
+        tabs: [['all', 'All Entries'], ['mine', 'My Entries'], ['new', 'Add Follow-up']], defaultTab: 'all'
+    },
+    '/adoption-management': {
+        key: 'adoption', title: 'Adoption Management',
+        description: 'Find available animals, continue applications and review adoption history.',
+        tabs: [['available', 'Available'], ['processing', 'In Progress'], ['completed', 'Completed'],
+            ['cancelled', 'Cancelled'], ['not_open', 'Not Open']], defaultTab: 'available'
+    }
+};
+
+app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, res) => {
+    try {
+        const area = workAreas[req.path];
+        const tab = area.tabs.some(([key]) => key === req.query.tab) ? req.query.tab : area.defaultTab;
+        const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+        const literal = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const animalSearch = q ? { $or: [
+            { animalCode: { $regex: literal, $options: 'i' } },
+            { appearance: { $regex: literal, $options: 'i' } }
+        ] } : {};
+        const open = { closedAt: null, adoptionStatus: { $ne: 'adopted' } };
+        let model = Animal;
+        let where = animalSearch;
+        const animalRows = area.key === 'rescue' || (area.key === 'followups' && tab === 'new') ||
+            (area.key === 'adoption' && ['available', 'not_open'].includes(tab));
+        if (area.key === 'rescue') {
+            where = { $and: [animalSearch, tab === 'archived' ? {
+                $or: [{ closedAt: { $ne: null } }, { adoptionStatus: 'adopted' }]
+            } : open] };
+            if (['pending', 'rescuing', 'placed'].includes(tab)) where.rescueStatus = tab;
+        } else if (animalRows) {
+            where = { ...animalSearch, ...open };
+            if (area.key === 'adoption') where.adoptionStatus = tab;
+        } else {
+            const animalIds = await Animal.find(animalSearch).distinct('_id');
+            where = { animalId: { $in: animalIds } };
+            if (area.key === 'followups') {
+                model = FollowUp;
+                if (tab === 'mine') where.recordedBy = req.user._id;
+            } else {
+                model = LAdoption;
+                if (tab === 'cancelled') where.cancelledAt = { $ne: null };
+                else {
+                    where.cancelledAt = null;
+                    where.completedAt = tab === 'completed' ? { $ne: null } : null;
+                }
+            }
+        }
+        const total = await model.countDocuments(where);
+        const pageCount = Math.max(1, Math.ceil(total / 10));
+        const requested = Number(req.query.page);
+        const page = Number.isSafeInteger(requested) && requested > 0 ? Math.min(requested, pageCount) : 1;
+        let query = model.find(where).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * 10).limit(10);
+        if (animalRows) query = query.populate('assignedTo', 'displayName isActive');
+        else query = query.populate('animalId').populate(
+            area.key === 'followups' ? 'recordedBy' : 'registeredBy', 'displayName');
+        const rows = await query.lean();
+        const urlFor = (nextTab = tab, nextPage = 1) => req.path + '?' + new URLSearchParams({
+            tab: nextTab, q, page: String(nextPage)
+        }).toString();
+        req.session.workReturns = { ...req.session.workReturns, [area.key]: urlFor(tab, page) };
+        return res.render('work-area', {
+            title: area.title, activePage: area.key, area, tab, q, rows, animalRows,
+            total, page, pageCount, urlFor, basePath: req.path
         });
     } catch (error) {
         return yHandleError(error, req, res);
@@ -1690,7 +1798,7 @@ app.post(
     async (req, res) => {
         try {
             await mUpdateRescue(req);
-            return res.redirect(303, '/animals/' + req.params.id);
+            return res.redirect(303, '/animals/' + req.params.id + '/rescue?saved=1');
         } catch (error) {
             return mHandleError(error, req, res);
         }
@@ -1800,7 +1908,8 @@ app.post(
     async (req, res) => {
         try {
             await mCreateFollowUp(req);
-            return res.redirect(303, '/animals/' + req.params.id);
+            return res.redirect(303, req.session?.workReturns?.followups ||
+                '/animals/' + req.params.id + '#care-journal');
         } catch (error) {
             return mHandleError(error, req, res);
         }
@@ -1909,7 +2018,8 @@ app.post(
     async (req, res) => {
         try {
             await mUpdateFollowUp(req);
-            return res.redirect(303, '/animals/' + req.params.id);
+            return res.redirect(303, req.session?.workReturns?.followups ||
+                '/animals/' + req.params.id + '#care-journal');
         } catch (error) {
             return mHandleError(error, req, res);
         }
@@ -1981,7 +2091,8 @@ app.post(
     async (req, res) => {
         try {
             await mDeleteFollowUp(req);
-            return res.redirect(303, '/animals/' + req.params.id);
+            return res.redirect(303, req.session?.workReturns?.followups ||
+                '/animals/' + req.params.id + '#care-journal');
         } catch (error) {
             return mHandleError(error, req, res);
         }
@@ -2106,6 +2217,7 @@ async function nPrepareDatabase() {
         index.key.animalId === 1 && Object.keys(index.key).length === 1 && !index
         .partialFilterExpression);
     if (old) await models.Adoption.collection.dropIndex(old.name);
+    await migrateAnimalCodes();
 }
 async function nTransaction(id, work) {
     nId(id);

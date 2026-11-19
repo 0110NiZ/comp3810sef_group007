@@ -1,7 +1,7 @@
 {
   "name": "comp3810sef_group007",
   "version": "1.0.0",
-  "description": "Pawhaven internal animal rescue and adoption workspace",
+  "description": "Animal Rescue Center internal animal rescue and adoption workspace",
   "main": "server.js",
   "scripts": {
     "test": "NODE_ENV=test node test-app.js",

@@ -1,4 +1,5 @@
 <%- include('header') %>
+<%- include('work-return') %>
 <% const hasError = typeof error === 'string' && error;
 const isStale = typeof stale !== 'undefined' && stale;
 const noteValue = typeof draftContent === 'string' ? draftContent : followUp ? followUp.content : '';

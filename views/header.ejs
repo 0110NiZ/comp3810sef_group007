@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        <%= title %> · Pawhaven</title>
+        <%= title %> · Animal Rescue Center</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/icons.css">
     <link rel="stylesheet" href="/workspace.css">
+    <link rel="stylesheet" href="/cozy-theme.css">
     <script src="/app.js" defer>
     </script>
 </head>
@@ -17,16 +18,24 @@
     <div class="app-shell">
         <aside class="sidebar">
             <a class="brand" href="/">
-                <span class="brand-mark" aria-hidden="true"><%- include('icon', { name: 'paw' }) %></span>
-                <span>Pawhaven<small>RESCUE & ADOPTION</small>
+                <span class="brand-mark" aria-hidden="true"><img src="/assets/cottage.svg" alt=""></span>
+                <span>Animal Rescue Center<small>RESCUE & ADOPTION</small>
                 </span>
             </a>
             <div class="nav-caption">Workspace</div>
             <nav aria-label="Main navigation">
-                <% const links = [['home', '/', 'Overview', 'overview'], ['list', '/animals', 'Animal Records', 'paw'], ['create', '/animals/new', 'Add Animal', 'plus']]; %>
+                <% const navigationPage = typeof workAreaKey === 'string' && workAreaKey ? workAreaKey : activePage; %>
+                <% const links = [
+                    ['home', '/', 'Overview', 'home'],
+                    ['list', '/animals', 'Animal Records', 'paw'],
+                    ['create', '/animals/new', 'Add Animal', 'plus'],
+                    ['rescue', '/rescue-management', 'Rescue Management', 'care'],
+                    ['followups', '/followup-records', 'Follow-up Records', 'notes'],
+                    ['adoption', '/adoption-management', 'Adoption Management', 'home']
+                ]; %>
                 <% links.forEach(([key, href, label, icon]) => { %>
-                <a class="nav-item <%= activePage === key ? 'active' : '' %>" href="<%= href %>"
-                    <%- activePage === key ? 'aria-current="page"' : '' %>>
+                <a class="nav-item <%= navigationPage === key ? 'active' : '' %>" href="<%= href %>"
+                    <%- navigationPage === key ? 'aria-current="page"' : '' %>>
                     <span aria-hidden="true">
                         <%- include('icon', { name: icon }) %>
                     </span>
@@ -54,6 +63,7 @@
                 <% } %>
             </nav>
             <div class="sidebar-note">
+                <img class="sidebar-pets" src="/assets/companions.svg" alt="" aria-hidden="true">
                 <span class="tiny-dot">
                 </span>Every record. A new beginning.
             </div>
@@ -61,7 +71,7 @@
         <div class="workspace">
             <header class="topbar">
                 <div>
-                    <span class="eyebrow">PAWHAVEN WORKSPACE</span>
+                    <span class="eyebrow">ANIMAL RESCUE CENTER WORKSPACE</span>
                     <span class="topbar-title">
                         <%= title %>
                     </span>

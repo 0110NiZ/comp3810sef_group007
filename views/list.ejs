@@ -1,10 +1,18 @@
 <%- include('header') %>
+<% const mode = typeof workspaceMode === 'string' ? workspaceMode : 'list';
+const basePath = typeof listPath === 'string' ? listPath : '/animals';
+const workspaceCopy = {
+    list: ['Animal Records', 'Find records by type, location, status and registration date.'],
+    rescue: ['Rescue Management', 'Select an animal to manage rescue progress, staff assignment and placement.'],
+    followups: ['Follow-up Records', 'Select an animal to read its care journal or add a follow-up.'],
+    adoption: ['Adoption Management', 'Select an animal to manage availability, registration and adoption progress.']
+}[mode]; %>
 
 <div class="page-heading">
     <div>
         <span class="eyebrow">ANIMAL RECORDS</span>
-        <h1>Animal Records</h1>
-        <p>Find records by type, location, status and registration date.</p>
+        <h1><%= workspaceCopy[0] %></h1>
+        <p><%= workspaceCopy[1] %></p>
     </div>
     <a class="button primary" href="/animals/new">＋ Add Animal</a>
 </div>
@@ -12,7 +20,7 @@
 
 <section class="panel">
 
-    <form method="get" action="/animals" class="filters">
+    <form method="get" action="<%= basePath %>" class="filters">
 
         <label>
             Animal Type
@@ -132,7 +140,7 @@
 
         <div class="filter-actions">
             <button class="primary" type="submit">Search</button>
-            <a class="button" href="/animals">Reset</a>
+            <a class="button" href="<%= basePath %>">Reset</a>
         </div>
 
     </form>
@@ -199,7 +207,19 @@
                     </td>
 
                     <td>
+                        <% const closedCase = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted'; %>
+                        <% if (mode === 'rescue' && !closedCase) { %>
+                        <a class="button" href="/animals/<%= animal._id %>/rescue">Manage Rescue</a>
+                        <% } else if (mode === 'adoption' && !closedCase) { %>
+                        <a class="button" href="/animals/<%= animal._id %>/adoption">Manage Adoption</a>
+                        <% } else if (mode === 'followups') { %>
+                        <a href="/animals/<%= animal._id %>#care-journal">View Follow-ups</a>
+                        <% if (!closedCase) { %>
+                        <a class="button" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+                        <% } %>
+                        <% } else { %>
                         <a href="/animals/<%= animal._id %>">View Details</a>
+                        <% } %>
                     </td>
                 </tr>
                 <% }) %>

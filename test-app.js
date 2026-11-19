@@ -72,6 +72,7 @@ async function main() {
                 if (url === '/api/csrf' && json) csrf = json.data.csrfToken;
                 return {
                     status: response.status,
+                    location: response.headers.get("location"),
                     json,
                     text
                 };
@@ -127,6 +128,7 @@ async function main() {
         })).status, 403);
         const created = await worker('POST', '/api/animals', fields);
         assert.equal(created.status, 201);
+        assert.match(created.json.data.animalCode, /^AR-\d{4}-\d{4,}$/);
         const id = created.json.data._id,
             api = '/api/animals/' + id,
             web = '/animals/' + id;
@@ -283,6 +285,44 @@ async function main() {
         assert.equal((await worker('GET', '/api/animals?foundLocation=%5B')).status, 200);
         assert.equal((await worker('GET', '/api/animals?page=999')).json.pagination.page, 1);
         pass('All pages render in English; filtering and pagination boundaries');
+        for (const [path, suffix, label] of [
+            ['/rescue-management', '?tab=placed&q=Milo', 'Responsible Staff'],
+            ['/followup-records', '?tab=all', 'Checked by administrator.'],
+            ['/adoption-management', '?tab=processing', 'Second Adopter']
+        ]) {
+            assert.equal((await anonymous('GET', path)).status, 303);
+            const response = await worker('GET', path + suffix);
+            assert.equal(response.status, 200);
+            assert.ok(response.text.includes(label));
+            assert.ok(response.text.includes('action="' + path + '"'));
+            if (process.env.PREVIEW_DIR) {
+                require('node:fs').writeFileSync(process.env.PREVIEW_DIR + path + '.html', response.text);
+            }
+        }
+        const mine = await worker('GET', '/followup-records?tab=mine');
+        assert.ok(!mine.text.includes('Administrator note.'));
+        assert.ok(mine.text.includes('Checked by administrator.'));
+        const cancelled = await worker('GET', '/adoption-management?tab=cancelled');
+        assert.ok(cancelled.text.includes('Test Adopter'));
+        assert.ok(cancelled.text.includes('Adopter withdrew'));
+        const currentAnimal = await Animal.findById(id);
+        const saved = await worker('POST', web + '/rescue', {
+            rescueStatus: 'placed', assignedTo: String(staff._id), placementLocation: 'North Shelter',
+            expectedUpdatedAt: currentAnimal.updatedAt.toISOString()
+        }, { form: true });
+        assert.equal(saved.status, 303);
+        assert.equal(saved.location, web + '/rescue?saved=1');
+        const savedPage = await worker('GET', saved.location);
+        assert.ok(savedPage.text.includes('Rescue changes saved.'));
+        assert.ok(savedPage.text.includes('/rescue-management?tab=placed&amp;q=Milo'));
+        const newNote = await worker('POST', web + '/followups/new', {
+            content: 'Workspace return check'
+        }, { form: true });
+        assert.equal(newNote.status, 303);
+        assert.equal(newNote.location, '/followup-records?tab=mine&q=&page=1');
+        assert.equal((await worker('GET', '/rescue-management?q=%5B')).status, 200);
+        pass('Distinct work areas, ownership filters, cancelled history and contextual return links');
+
         const closeRace = await Promise.all([worker('PUT', api + '/close', {
             ...stamp(),
             confirm: true
@@ -311,6 +351,18 @@ async function main() {
         assert.ok((await FollowUp.find({
             animalId: id
         })).every(note => note.createdAt <= closed.closedAt));
+        const activeCases = await worker('GET', '/rescue-management');
+        assert.ok(!activeCases.text.includes(animal.animalCode));
+        assert.ok(activeCases.text.includes('No active cases'));
+        assert.ok((await worker('GET', '/rescue-management?tab=archived')).text.includes(animal.animalCode));
+        const completedWork = await worker('GET', '/adoption-management?tab=completed');
+        assert.ok(completedWork.text.includes('Second Adopter'));
+        assert.ok(!completedWork.text.includes('Continue Application'));
+        const closedJournal = await worker('GET', '/followup-records');
+        assert.ok(!closedJournal.text.includes('>Edit Entry</a>'));
+        if (process.env.PREVIEW_DIR) {
+            require('node:fs').writeFileSync(process.env.PREVIEW_DIR + '/rescue-empty.html', activeCases.text);
+        }
         pass('Follow-up/closure race and closed-case restrictions for both roles');
         const disposable = (await worker('POST', '/api/animals', fields)).json.data;
         const disposableApi = '/api/animals/' + disposable._id;

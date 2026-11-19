@@ -3,16 +3,16 @@
 <section class="welcome-banner">
     <div>
         <span class="eyebrow">CARE, COORDINATED</span>
-        <h1>A clear view of every rescue.</h1>
+        <h1>A little care. A place to belong.</h1>
         <p>Your team’s care desk. Review recent updates, coordinate placement and keep the next step in sight.</p>
     </div>
     <div class="welcome-actions">
-        <%- include('pet-pair') %>
+        <img class="cottage-art" src="/assets/cottage.svg" alt="" aria-hidden="true">
         <a class="button primary" href="/animals/new"><%- include('icon', { name: 'plus' }) %>Register Animal
         </a>
     </div>
 </section>
-<nav class="workspace-shortcuts" aria-label="Quick actions">
+<nav class="workspace-shortcuts cozy-actions" aria-label="Quick actions">
     <a href="/animals"><%- include('icon', { name: 'paw' }) %><span><strong>Animal records</strong><small>Search and review care</small></span><span aria-hidden="true">→</span></a>
     <a href="/animals/new"><%- include('icon', { name: 'plus' }) %><span><strong>New rescue</strong><small>Start an animal record</small></span><span aria-hidden="true">→</span></a>
     <a href="/profile"><%- include('icon', { name: 'user' }) %><span><strong>My account</strong><small>Contact details & security</small></span><span aria-hidden="true">→</span></a>
@@ -101,8 +101,9 @@
                 <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
             </span>
 
-            <a class="arrow-link" href="/animals/<%= animal._id %>"
+            <a class="button primary record-details-button" href="/animals/<%= animal._id %>"
                 aria-label="View <%= animal.animalCode %> Details">
+                View Details
                 <%- include('icon', { name: 'arrow' }) %>
             </a>
         </div>

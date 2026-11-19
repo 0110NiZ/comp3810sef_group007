@@ -1,4 +1,4 @@
-# Pawhaven — Animal Rescue & Adoption
+# Animal Rescue Center — Animal Rescue & Adoption
 
 COMP3810SEF Group 007. Internal staff workspace using Express, EJS and MongoDB/Mongoose.
 Routes and business logic remain in server.js; models, views and assets remain in their
@@ -154,3 +154,29 @@ failures to verify rollback, legacy index migration and audit integrity.
 Submit server.js, package files, README, models, views and public assets. Exclude node_modules,
 .env, cookies, local database files and temporary screenshots. Source must remain readable,
 with indented multi-line EJS, JavaScript and CSS. Keep licences and accurate attribution.
+
+
+### Animal reference codes
+
+Animal codes use `AR-YYYY-NNNN`, for example `AR-2026-0001`. The year follows
+Hong Kong time. A database counter allocates unique numbers across concurrent
+registrations; numbers are never reused and gaps are allowed after failed requests.
+The sequence can grow beyond four digits.
+
+Database initialization migrates legacy codes in registration order. This is
+idempotent and also reserves codes in deletion history. MongoDB `_id` values,
+relationships, record versions and timestamps remain unchanged. The
+`animal_code_migrations` collection retains the old/new code mapping.
+A replica set is required, as for existing adoption transactions.
+
+To explicitly run the migration using the local connection configuration:
+
+```sh
+node --env-file=.env scripts/migrate-animal-codes.js
+```
+
+For isolated local counter and migration tests (replica set on port 27018):
+
+```sh
+NODE_ENV=test node test-animal-codes.js
+```

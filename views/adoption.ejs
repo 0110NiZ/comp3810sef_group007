@@ -1,4 +1,5 @@
 <%- include('header') %>
+<%- include('work-return') %>
 <div class="page-heading">
     <div>
         <span class="eyebrow">A NEW HOME</span>
@@ -18,10 +19,21 @@
     <% } %>
 </div>
 <% } %>
-<div class="form-layout">
+<ol class="adoption-stages" aria-label="Adoption stages">
+    <% ['Open', 'Register', 'Complete'].forEach((label, index) => {
+        const stage = animal.closedAt || animal.adoptionStatus === 'adopted' ? 2 :
+            animal.adoptionStatus === 'processing' ? 2 : animal.adoptionStatus === 'available' ? 1 : 0;
+    %>
+    <li class="<%= index === stage ? 'current' : index < stage ? 'done' : '' %>"
+        <%- index === stage ? 'aria-current="step"' : '' %>>
+        <span><%= index + 1 %></span><%= label %>
+    </li>
+    <% }); %>
+</ol>
+<div class="form-layout adoption-workspace">
     <section class="panel">
         <h2>
-            <%= adoption ? 'Adoption Details' : 'Register an Adopter' %>
+            <%= animal.closedAt ? 'Closed Record' : adoption ? 'Adoption Details' : animal.adoptionStatus === 'not_open' ? 'Open for Adoption' : 'Register an Adopter' %>
         </h2>
         <% if (adoption && animal.adoptionStatus === 'processing' && !animal.closedAt) { %>
         <p>Update the current adoption details here. If the adopter withdraws, cancel this adoption before
@@ -105,13 +117,42 @@
             </div>
         </form>
         <% } else { %>
-        <p>No adoption registered. Confirm placement and health before opening adoption.</p>
+        <% if (animal.closedAt) { %>
+        <p>This case is closed. Its records are read-only.</p>
+        <% } else { %>
+        <p>Review placement and health, then confirm that this animal is ready for a new home.</p>
+        <dl class="adoption-readiness">
+            <dt>Placement</dt><dd><%= animal.placementLocation || 'Not arranged' %></dd>
+            <dt>Health Condition</dt><dd><%= animal.healthStatus %></dd>
+        </dl>
+        <% if (!animal.closedAt && !adoption && animal.adoptionStatus === 'not_open') { %>
+        <% if (animal.rescueStatus === 'placed' && animal.assignedTo && animal.placementLocation) { %>
+        <form class="open-adoption-form" method="POST" action="/animals/<%= animal._id %>/adoption-status">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="adoptionStatus" value="available">
+            <label class="checkbox">
+                <input type="checkbox" name="healthConfirmed" value="yes" required>I confirm the animal is
+                healthy enough for adoption
+            </label>
+            <button type="submit" class="primary spaced" <%= stale ? 'disabled' : '' %>>Open for Adoption
+            </button>
+        </form>
+        <% } else { %>
+        <div class="warning-box">
+            <p>Assign a staff member and record placement before opening adoption.</p>
+            <a class="button primary" href="/animals/<%= animal._id %>/rescue">Update Rescue Details</a>
+        </div>
+        <% } %><% } %>
+        <% } %>
+        <% } %>
+        <% if (adoption) { %>
+        <a class="button primary spaced" href="/animals/<%= animal._id %>/close">
+            <%= animal.closedAt ? 'View Closed Record' : 'Complete Adoption' %> →</a>
         <% } %>
     </section>
     <aside class="panel form-aside">
-        <span class="aside-symbol"><%- include('icon', { name: 'home' }) %></span>
-        <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Adoption Progress
+                <h2 class="icon-heading">
+            <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Animal Summary
         </h2>
         <span class="badge status-<%= animal.adoptionStatus %>">
             <%= labels.adoptionStatuses[animal.adoptionStatus] %>
@@ -130,31 +171,12 @@
                 <%= animal.placementLocation || 'Not placed' %>
             </dd>
         </dl>
-        <% if (!animal.closedAt && !adoption && animal.adoptionStatus === 'not_open') { %>
-        <% if (animal.rescueStatus === 'placed' && animal.assignedTo && animal.placementLocation) { %>
-        <form method="POST" action="/animals/<%= animal._id %>/adoption-status">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="adoptionStatus" value="available">
-            <label class="checkbox">
-                <input type="checkbox" name="healthConfirmed" value="yes" required>I confirm the animal is
-                healthy enough for adoption
-            </label>
-            <button type="submit" class="primary spaced" <%= stale ? 'disabled' : '' %>>Open for Adoption
-            </button>
-        </form>
-        <% } else { %>
-        <p>Assign a staff member and placement before opening adoption.</p>
-        <% } %><% } %>
         <% if (!animal.closedAt && !adoption && animal.adoptionStatus === 'available') { %>
         <form method="POST" action="/animals/<%= animal._id %>/adoption-status" class="spaced">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="adoptionStatus" value="not_open">
             <button type="submit" <%= stale ? 'disabled' : '' %>>Withdraw Availability</button>
         </form>
-        <% } %>
-        <% if (adoption) { %>
-        <a class="button primary spaced" href="/animals/<%= animal._id %>/close">
-            <%= animal.closedAt ? 'View Closed Record' : 'Complete Adoption' %> →</a>
         <% } %>
         <% if (currentUser && currentUser.role === 'admin' && !animal.closedAt && animal.adoptionStatus !== 'adopted') { %>
         <a class="button spaced" href="/animals/<%= animal._id %>/delete">Delete Incorrect Record</a>
