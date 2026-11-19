@@ -7,16 +7,12 @@
         <p>Your team’s care desk. Review recent updates, coordinate placement and keep the next step in sight.</p>
     </div>
     <div class="welcome-actions">
-        <img class="cottage-art" src="/assets/cottage.svg" alt="" aria-hidden="true">
+        <img class="cottage-art" src="/assets/landscape.svg" alt="" aria-hidden="true">
         <a class="button primary" href="/animals/new"><%- include('icon', { name: 'plus' }) %>Register Animal
         </a>
     </div>
 </section>
-<nav class="workspace-shortcuts cozy-actions" aria-label="Quick actions">
-    <a href="/animals"><%- include('icon', { name: 'paw' }) %><span><strong>Animal records</strong><small>Search and review care</small></span><span aria-hidden="true">→</span></a>
-    <a href="/animals/new"><%- include('icon', { name: 'plus' }) %><span><strong>New rescue</strong><small>Start an animal record</small></span><span aria-hidden="true">→</span></a>
-    <a href="/profile"><%- include('icon', { name: 'user' }) %><span><strong>My account</strong><small>Contact details & security</small></span><span aria-hidden="true">→</span></a>
-</nav>
+
 <div class="section-heading dashboard-heading">
     <div>
         <span class="eyebrow">OVERVIEW</span>
@@ -65,8 +61,43 @@
     <% }) %>
 </div>
 
-<div class="columns">
+<div class="pixel-chart-grid">
+    <%- include('rescue-chart', { rescueCounts }) %>
     <section class="panel">
+        <span class="eyebrow">A NEW HOME</span>
+        <h2 class="icon-heading">
+            <span class="heading-icon"><%- include('icon', { name: 'heart' }) %></span>Adoption Progress
+        </h2>
+
+        <% adoptionCounts.forEach((item, i) => { %>
+        <div class="adoption-row">
+            <div>
+                <span>
+                    <i class="legend-dot legend-<%= i %>">
+                    </i>
+                    <%= item.label %>
+                </span>
+
+                <strong>
+                    <%= item.count %>
+                </strong>
+            </div>
+
+            <div class="progress-track">
+                <span class="progress-fill fill-<%= i %>"
+                    style="width: <%= total ? item.count / total * 100 : 0 %>%">
+                </span>
+            </div>
+        </div>
+        <% }) %>
+
+        <p class="panel-note">
+            Completed adoptions retain their full history.
+        </p>
+    </section>
+</div>
+<div class="pixel-dashboard-bottom">
+    <section class="panel recent-animals">
         <div class="section-heading">
             <h2 class="icon-heading">
                 <span class="heading-icon"><%- include('icon', { name: 'clock' }) %></span>Recently Updated
@@ -97,10 +128,15 @@
                 </small>
             </div>
 
+            <div class="record-statuses">
             <span class="badge status-<%= animal.rescueStatus %>">
                 <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
             </span>
 
+            <span class="badge status-<%= animal.adoptionStatus %>">
+                <%= labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown' %>
+            </span>
+            </div>
             <a class="button primary record-details-button" href="/animals/<%= animal._id %>"
                 aria-label="View <%= animal.animalCode %> Details">
                 View Details
@@ -114,38 +150,30 @@
         </p>
         <% } %>
     </section>
-
-    <section class="panel">
-        <span class="eyebrow">A NEW HOME</span>
-        <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Adoption Progress
-        </h2>
-
-        <% adoptionCounts.forEach((item, i) => { %>
-        <div class="adoption-row">
-            <div>
-                <span>
-                    <i class="legend-dot legend-<%= i %>">
-                    </i>
-                    <%= item.label %>
-                </span>
-
-                <strong>
-                    <%= item.count %>
-                </strong>
-            </div>
-
-            <div class="progress-track">
-                <span class="progress-fill fill-<%= i %>"
-                    style="width: <%= total ? item.count / total * 100 : 0 %>%">
-                </span>
-            </div>
-        </div>
-        <% }) %>
-
-        <p class="panel-note">
-            Completed adoptions retain their full history.
-        </p>
+    <section class="panel pixel-quick-panel">
+        <h2 class="icon-heading"><%- include('icon', { name: 'plus' }) %>Quick Actions</h2>
+        <nav class="pixel-quick-grid" aria-label="Quick actions">
+            <a class="pixel-quick quick-green" href="/animals/new">
+                <%- include('icon', { name: 'paw-plus' }) %>
+                <strong>Add Animal</strong>
+                <small>Start a care record</small>
+            </a>
+            <a class="pixel-quick quick-blue" href="/animals">
+                <%- include('icon', { name: 'notes' }) %>
+                <strong>Animal Records</strong>
+                <small>Find an animal</small>
+            </a>
+            <a class="pixel-quick quick-yellow" href="/rescue-management">
+                <%- include('icon', { name: 'care' }) %>
+                <strong>Rescue Management</strong>
+                <small>Coordinate care</small>
+            </a>
+            <a class="pixel-quick quick-pink" href="/adoption-management">
+                <%- include('icon', { name: 'heart' }) %>
+                <strong>Adoption Management</strong>
+                <small>Find a new home</small>
+            </a>
+        </nav>
     </section>
 </div>
 

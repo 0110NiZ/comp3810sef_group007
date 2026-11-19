@@ -1,8 +1,9 @@
 <%- include('header') %>
+<div class="pixel-work-area area-<%= area.key %>">
 <div class="page-heading">
     <div>
         <span class="eyebrow">CARE WORKSPACE</span>
-        <h1><%= area.title %></h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: area.key === 'adoption' ? 'heart' : area.key === 'rescue' ? 'care' : 'notes' }) %><%= area.title %></h1>
         <p><%= area.description %></p>
     </div>
     <% if (area.key === 'followups' && tab !== 'new') { %>
@@ -20,13 +21,13 @@
     <label>Find an Animal
         <input name="q" maxlength="100" value="<%= q %>" placeholder="Animal code or description">
     </label>
-    <button class="primary" type="submit">Search</button>
-    <a class="button" href="<%= basePath %>?tab=<%= tab %>">Reset</a>
+    <button class="primary" type="submit"><%- include('icon', { name: 'search' }) %>Search</button>
+    <a class="button" href="<%= basePath %>?tab=<%= tab %>"><%- include('icon', { name: 'refresh' }) %>Reset</a>
     <span class="muted"><%= total %> <%= animalRows ? 'animals' : 'records' %></span>
 </form>
 <% if (!rows.length) { %>
 <section class="panel work-empty">
-    <span class="heading-icon"><%- include('icon', { name: area.key === 'followups' ? 'notes' : 'home' }) %></span>
+    <span class="heading-icon"><%- include('icon', { name: area.key === 'followups' ? 'notes' : area.key === 'rescue' ? 'care' : 'heart' }) %></span>
     <h2><%= q ? 'No matching records' : area.key === 'rescue' && tab !== 'archived' ? 'No active cases in this category' : 'Nothing here yet' %></h2>
     <p><%= q ? 'Try another animal code or description.' : 'Records will appear here when they reach this stage.' %></p>
     <% if (area.key === 'rescue') { %>
@@ -45,10 +46,12 @@
         const canEdit = !closed && (currentUser.role === 'admin' ||
             String(row.recordedBy?._id || row.recordedBy) === String(currentUser._id));
     %>
-    <article class="panel work-record">
+    <article class="panel work-record <%= closed ? 'archived-record' : '' %>">
         <header class="work-record-heading">
+            <span class="work-animal-icon"><%- include('icon', { name: ['cat', 'dog'].includes(animal.animalType) ? animal.animalType : 'paw' }) %></span>
             <div>
                 <span class="eyebrow"><%= animal.animalCode %></span>
+                <% if (closed) { %><span class="archive-label"><%- include('icon', { name: 'lock' }) %>Read-only</span><% } %>
                 <h2><%= animal.appearance %></h2>
             </div>
             <span class="badge status-<%= applicationStatus || (area.key === 'adoption' ? animal.adoptionStatus : animal.rescueStatus) %>">
@@ -83,13 +86,13 @@
         <% } %>
         <footer class="actions work-record-actions">
             <% if (area.key === 'rescue' && !closed) { %>
-            <a class="button primary" href="/animals/<%= animal._id %>/rescue">Update Rescue</a>
-            <a class="button" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+            <a class="button primary" href="/animals/<%= animal._id %>/rescue"><%- include('icon', { name: 'care' }) %>Update Rescue</a>
+            <a class="button" href="/animals/<%= animal._id %>/followups/new"><%- include('icon', { name: 'notes-plus' }) %>Add Follow-up</a>
             <% } else if (area.key === 'followups' && animalRows && !closed) { %>
-            <a class="button primary" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+            <a class="button primary" href="/animals/<%= animal._id %>/followups/new"><%- include('icon', { name: 'notes-plus' }) %>Add Follow-up</a>
             <% } else if (area.key === 'followups' && !animalRows && canEdit) { %>
-            <a class="button" href="/animals/<%= animal._id %>/followups/<%= row._id %>/edit">Edit Entry</a>
-            <a class="button danger-text" href="/animals/<%= animal._id %>/followups/<%= row._id %>/delete">Delete Entry</a>
+            <a class="button" href="/animals/<%= animal._id %>/followups/<%= row._id %>/edit"><%- include('icon', { name: 'edit' }) %>Edit Entry</a>
+            <a class="button danger-text" href="/animals/<%= animal._id %>/followups/<%= row._id %>/delete"><%- include('icon', { name: 'delete' }) %>Delete Entry</a>
             <% } else if (area.key === 'adoption' && !closed && !['cancelled', 'completed'].includes(tab)) { %>
             <a class="button primary" href="/animals/<%= animal._id %>/adoption"><%= tab === 'processing' ? 'Continue Application' : tab === 'available' ? 'Register Adopter' : 'Review Availability' %></a>
             <% } %>
@@ -105,4 +108,5 @@
         <% if (page < pageCount) { %><a class="button" href="<%= urlFor(tab, page + 1) %>">Next</a><% } %>
     </div>
 </nav>
+</div>
 <%- include('footer') %>

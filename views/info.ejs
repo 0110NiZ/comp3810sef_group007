@@ -1,7 +1,7 @@
 <%- include('header') %>
 <section class="panel form-panel result-panel">
     <span class="eyebrow">WORKSPACE NOTICE</span>
-    <h1>
+    <h1 class="pixel-page-title"><%- include('icon', { name: /forbidden|denied|unauthor|sign in/i.test(title) ? 'lock' : /not found/i.test(title) ? 'search' : 'warning' }) %>
         <%= title %>
     </h1>
     <p class="spaced" role="status">

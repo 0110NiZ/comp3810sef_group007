@@ -2,7 +2,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">YOUR WORKSPACE IDENTITY</span>
-        <h1>My Account</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'user' }) %>My Account</h1>
         <p>Keep your contact details up to date for your team.</p>
     </div>
 </div>
@@ -17,8 +17,9 @@
 </p>
 <% } %>
 <section class="panel account-summary">
-    <span class="profile-avatar">
+    <span class="profile-avatar"><%- include('icon', { name: 'user' }) %><span class="avatar-initial">
         <%= profile.displayName.slice(0, 1).toUpperCase() %>
+        </span>
     </span>
     <div>
         <h2>
@@ -53,7 +54,7 @@
             </div>
             <div class="form-bottom">
                 <p>Your username and role are managed separately.</p>
-                <button type="submit" class="primary">Save Changes</button>
+                <button type="submit" class="primary"><%- include('icon', { name: 'check' }) %> Save Changes</button>
             </div>
         </form>
     </section>

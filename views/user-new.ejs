@@ -2,7 +2,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">TEAM ADMINISTRATION</span>
-        <h1>Create Staff Account</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'user-plus' }) %>Create Staff Account</h1>
         <p>Assign an individual account for daily rescue work.</p>
     </div>
     <a class="button" href="/users">Back to Team</a>
@@ -33,7 +33,7 @@
         </div>
         <div class="form-bottom">
             <p>Role: Staff. The account holder can change their password after signing in.</p>
-            <button class="primary" type="submit">Create Account</button>
+            <button class="primary" type="submit"><%- include('icon', { name: 'user-plus' }) %> Create Account</button>
         </div>
     </form>
 </section>

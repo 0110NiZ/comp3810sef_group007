@@ -3,7 +3,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">A NEW HOME</span>
-        <h1>Adoption Management</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'heart' }) %>Adoption Management</h1>
         <p>
             <%= animal.animalCode %> · Find a suitable home</p>
     </div>
@@ -112,7 +112,7 @@
             </div>
             <div class="form-bottom">
                 <p>Saving starts the adoption process.</p>
-                <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>>Register Adoption
+                <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>><%- include('icon', { name: 'adoption' }) %>Register Adoption
                 </button>
             </div>
         </form>
@@ -134,7 +134,7 @@
                 <input type="checkbox" name="healthConfirmed" value="yes" required>I confirm the animal is
                 healthy enough for adoption
             </label>
-            <button type="submit" class="primary spaced" <%= stale ? 'disabled' : '' %>>Open for Adoption
+            <button type="submit" class="primary spaced" <%= stale ? 'disabled' : '' %>><%- include('icon', { name: 'heart-plus' }) %>Open for Adoption
             </button>
         </form>
         <% } else { %>
@@ -152,7 +152,7 @@
     </section>
     <aside class="panel form-aside">
                 <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Animal Summary
+            <span class="heading-icon"><%- include('icon', { name: 'heart' }) %></span>Animal Summary
         </h2>
         <span class="badge status-<%= animal.adoptionStatus %>">
             <%= labels.adoptionStatuses[animal.adoptionStatus] %>

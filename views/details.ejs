@@ -21,7 +21,7 @@
     <a class="button" href="/animals">Back to List</a>
 </div>
 <% if (closed) { %>
-<p class="form-feedback" role="status">This case is closed. The archived record is read-only.</p>
+<p class="form-feedback" role="status"><%- include('icon', { name: 'lock' }) %>This case is closed. The archived record is read-only.</p>
 <% } %>
 <nav class="case-navigation" aria-label="This animal record">
     <a href="#case-summary">Overview</a>
@@ -46,7 +46,7 @@
             <dd>
                 <%= animal.foundLocation %>
             </dd>
-            <dt>Health Condition</dt>
+            <dt class="icon-heading"><%- include('icon', { name: 'care' }) %>Health Condition</dt>
             <dd>
                 <%= animal.healthStatus %>
             </dd>
@@ -117,7 +117,7 @@
 </div>
 <section class="panel spaced" id="adoption-history">
     <h2 class="icon-heading">
-        <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Adoption History
+        <span class="heading-icon"><%- include('icon', { name: 'heart' }) %></span>Adoption History
     </h2>
     <% if (!adoptionRecords.length) { %>
     <p>No adoption registered yet.</p>
@@ -176,7 +176,7 @@
         <span class="heading-icon"><%- include('icon', { name: 'notes' }) %></span>Follow-up Records
     </h2>
     <% if (!closed) { %>
-    <a class="button" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+    <a class="button" href="/animals/<%= animal._id %>/followups/new"><%- include('icon', { name: 'notes-plus' }) %>Add Follow-up</a>
     <% } %>
     <% if (!followUps.length) { %>
     <p>No follow-up records yet.</p>
@@ -197,9 +197,9 @@
         <% } %>
         <% if (!closed && currentUser && (currentUser.role === 'admin' || String(item.recordedBy?._id || item.recordedBy) === String(currentUser._id))) { %>
         <div class="actions">
-            <a class="text-link" href="/animals/<%= animal._id %>/followups/<%= item._id %>/edit">Edit</a>
+            <a class="text-link" href="/animals/<%= animal._id %>/followups/<%= item._id %>/edit"><%- include('icon', { name: 'edit' }) %>Edit</a>
             <a class="text-link danger-text"
-                href="/animals/<%= animal._id %>/followups/<%= item._id %>/delete">Delete</a>
+                href="/animals/<%= animal._id %>/followups/<%= item._id %>/delete"><%- include('icon', { name: 'delete' }) %>Delete</a>
         </div>
         <% } %>
     </article>

@@ -14,7 +14,7 @@
     </script>
 </head>
 
-<body>
+<body data-page="<%= typeof workAreaKey === 'string' && workAreaKey ? workAreaKey : activePage %>">
     <div class="app-shell">
         <aside class="sidebar">
             <a class="brand" href="/">
@@ -28,10 +28,10 @@
                 <% const links = [
                     ['home', '/', 'Overview', 'home'],
                     ['list', '/animals', 'Animal Records', 'paw'],
-                    ['create', '/animals/new', 'Add Animal', 'plus'],
+                    ['create', '/animals/new', 'Add Animal', 'paw-plus'],
                     ['rescue', '/rescue-management', 'Rescue Management', 'care'],
                     ['followups', '/followup-records', 'Follow-up Records', 'notes'],
-                    ['adoption', '/adoption-management', 'Adoption Management', 'home']
+                    ['adoption', '/adoption-management', 'Adoption Management', 'heart']
                 ]; %>
                 <% links.forEach(([key, href, label, icon]) => { %>
                 <a class="nav-item <%= navigationPage === key ? 'active' : '' %>" href="<%= href %>"
@@ -70,6 +70,7 @@
         </aside>
         <div class="workspace">
             <header class="topbar">
+                <img class="topbar-landscape" src="/assets/landscape.svg" alt="" aria-hidden="true">
                 <div>
                     <span class="eyebrow">ANIMAL RESCUE CENTER WORKSPACE</span>
                     <span class="topbar-title">

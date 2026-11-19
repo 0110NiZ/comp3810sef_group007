@@ -2,7 +2,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">TEAM ADMINISTRATION</span>
-        <h1>Team Accounts</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'team' }) %>Team Accounts</h1>
         <p>Provide access to your team and retain a clear history of their work.</p>
     </div>
     <a href="/users/new" class="button primary">+ Create Staff Account</a>
@@ -14,7 +14,7 @@
 <% } %>
 <div class="metrics spaced">
     <% [['Total accounts', summary.total], ['Active', summary.active], ['Disabled', summary.inactive], ['Administrators', summary.administrators]].forEach(([label, count]) => { %>
-    <section class="metric">
+    <section class="metric"><span class="metric-icon"><%- include('icon', { name: 'team' }) %></span>
         <span>
             <%= label %>
         </span>
@@ -64,7 +64,7 @@
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <input type="hidden" name="isActive"
                                 value="<%= user.isActive === false ? 'true' : 'false' %>">
-                            <button type="submit">
+                            <button type="submit" class="access-toggle"><%- include('icon', { name: 'lock' }) %>
                                 <%= user.isActive === false ? 'Enable Account' : 'Disable Account' %>
                             </button>
                         </form>

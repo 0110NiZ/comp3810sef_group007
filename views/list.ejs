@@ -11,7 +11,7 @@ const workspaceCopy = {
 <div class="page-heading">
     <div>
         <span class="eyebrow">ANIMAL RECORDS</span>
-        <h1><%= workspaceCopy[0] %></h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'notes' }) %><%= workspaceCopy[0] %></h1>
         <p><%= workspaceCopy[1] %></p>
     </div>
     <a class="button primary" href="/animals/new">＋ Add Animal</a>
@@ -139,8 +139,8 @@ const workspaceCopy = {
         </label>
 
         <div class="filter-actions">
-            <button class="primary" type="submit">Search</button>
-            <a class="button" href="<%= basePath %>">Reset</a>
+            <button class="primary" type="submit"><%- include('icon', { name: 'search' }) %> Search</button>
+            <a class="button" href="<%= basePath %>"><%- include('icon', { name: 'refresh' }) %> Reset</a>
         </div>
 
     </form>
@@ -215,10 +215,10 @@ const workspaceCopy = {
                         <% } else if (mode === 'followups') { %>
                         <a href="/animals/<%= animal._id %>#care-journal">View Follow-ups</a>
                         <% if (!closedCase) { %>
-                        <a class="button" href="/animals/<%= animal._id %>/followups/new">Add Follow-up</a>
+                        <a class="button" href="/animals/<%= animal._id %>/followups/new"><%- include('icon', { name: 'notes-plus' }) %> Add Follow-up</a>
                         <% } %>
                         <% } else { %>
-                        <a href="/animals/<%= animal._id %>">View Details</a>
+                        <a href="/animals/<%= animal._id %>"><%- include('icon', { name: 'arrow' }) %> View Details</a>
                         <% } %>
                     </td>
                 </tr>

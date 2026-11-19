@@ -2,7 +2,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">RECORD MANAGEMENT</span>
-        <h1>Delete Animal Record</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'warning' }) %>Delete Animal Record</h1>
         <p>For administrators to remove incorrect or duplicate records.</p>
     </div>
     <a class="button" href="/animals/<%= animal._id %>/adoption">Back to Adoption</a>
@@ -49,8 +49,8 @@
             duplicated and agree to delete its related records
         </label>
         <div class="form-bottom">
-            <a class="button" href="/animals/<%= animal._id %>/adoption">Cancel</a>
-            <button class="primary" type="submit">Confirm Deletion</button>
+            <a class="button" href="/animals/<%= animal._id %>/adoption"><%- include('icon', { name: 'back' }) %> Cancel</a>
+            <button class="danger" type="submit"><%- include('icon', { name: 'delete' }) %>Confirm Deletion</button>
         </div>
     </form>
 </section>

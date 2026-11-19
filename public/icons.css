@@ -1,4 +1,4 @@
-/* Shared, locally served line icons: no external fonts or image requests. */
+/* Shared original pixel sprites, drawn on a 16 by 16 grid. */
 .icon {
     display: inline-block;
     width: 20px;

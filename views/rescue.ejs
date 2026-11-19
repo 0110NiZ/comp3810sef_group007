@@ -7,7 +7,7 @@
 <div class="page-heading">
     <div>
         <span class="eyebrow">RESCUE CARE</span>
-        <h1>Rescue Management</h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: 'care' }) %>Rescue Management</h1>
         <p>
             <%= animal.animalCode %> · <%= animal.appearance %>
         </p>
@@ -30,7 +30,7 @@
 <% if (closed) { %>
 <p class="form-feedback">This case is closed. The record is read-only.</p>
 <% } %>
-<div class="form-layout">
+<div class="form-layout rescue-form-layout">
     <section class="panel">
         <h2 class="icon-heading">
             <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Assignment & Placement
@@ -89,7 +89,7 @@
                     <p>Rescue progress moves forward. Closed records are read-only.</p>
 
                     <div class="actions">
-                        <a class="button" href="/animals/<%= animal._id %>">
+                        <a class="button" href="/animals/<%= animal._id %>"><%- include('icon', { name: 'back' }) %>
                             Cancel
                         </a>
 

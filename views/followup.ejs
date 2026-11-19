@@ -9,7 +9,7 @@ const versionValue = typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt :
 <div class="page-heading">
     <div>
         <span class="eyebrow">CARE JOURNAL</span>
-        <h1>
+        <h1 class="pixel-page-title"><%- include('icon', { name: mode === 'delete' ? 'warning' : mode === 'edit' ? 'edit' : 'notes-plus' }) %>
             <%= title %>
         </h1>
         <p>
@@ -57,12 +57,12 @@ const versionValue = typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt :
             <p>This entry cannot be restored after deletion.</p>
 
             <div class="actions">
-                <a class="button" href="/animals/<%= animal._id %>">
+                <a class="button" href="/animals/<%= animal._id %>"><%- include('icon', { name: 'back' }) %>
                     Cancel
                 </a>
 
-                <button class="primary" type="submit" <%= isStale ? 'disabled' : '' %>>
-                    Confirm Deletion
+                <button class="danger" type="submit" <%= isStale ? 'disabled' : '' %>>
+                    <%- include('icon', { name: 'delete' }) %>Confirm Deletion
                 </button>
             </div>
         </div>
@@ -94,7 +94,7 @@ const versionValue = typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt :
             <p>Keep a clear record for the next member of the care team.</p>
 
             <div class="actions">
-                <a class="button" href="/animals/<%= animal._id %>">
+                <a class="button" href="/animals/<%= animal._id %>"><%- include('icon', { name: 'back' }) %>
                     Cancel
                 </a>
 
