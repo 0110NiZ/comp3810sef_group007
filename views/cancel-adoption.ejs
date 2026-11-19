@@ -1,0 +1,56 @@
+<%- include('header') %>
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">ADOPTION MANAGEMENT</span>
+        <h1>Cancel Adoption</h1>
+        <p>
+            <%= animal.animalCode %>
+        </p>
+    </div>
+    <a class="button" href="/animals/<%= animal._id %>/adoption">Back to Adoption</a>
+</div>
+<section class="panel form-panel">
+    <% if (error) { %>
+    <p class="warning-box" role="alert">
+        <%= error %>
+    </p>
+    <% } %>
+    <% if (stale) { %>
+    <a class="button" href="/animals/<%= animal._id %>/adoption/cancel">Reload and Review</a>
+    <% } %>
+    <h2>Review Before Cancelling</h2>
+    <dl>
+        <dt>Adopter</dt>
+        <dd>
+            <%= adoption.adopterName %>
+        </dd>
+        <dt>Phone</dt>
+        <dd>
+            <%= adoption.adopterPhone %>
+        </dd>
+        <dt>Registered</dt>
+        <dd>
+            <%= formatDate(adoption.createdAt) %>
+        </dd>
+    </dl>
+    <p class="warning-box spaced">The animal will return to Available. This registration, cancellation reason
+        and operator remain in its history.</p>
+    <form method="POST" action="/animals/<%= animal._id %>/adoption/cancel">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="adoptionId" value="<%= adoption._id %>">
+        <input type="hidden" name="adoptionVersion" value="<%= adoption.__v || 0 %>">
+        <label>Cancellation Reason <em>*</em>
+            <textarea name="cancellationReason" rows="4" maxlength="1000"
+                required><%= values.cancellationReason %></textarea>
+        </label>
+        <label class="checkbox spaced">
+            <input type="checkbox" name="confirm" value="yes" required>I confirm cancellation and understand
+            the history will be retained.
+        </label>
+        <div class="form-bottom">
+            <a class="button" href="/animals/<%= animal._id %>/adoption">Keep Adoption</a>
+            <button type="submit" class="danger" <%= stale ? 'disabled' : '' %>>Confirm Cancellation</button>
+        </div>
+    </form>
+</section>
+<%- include('footer') %>

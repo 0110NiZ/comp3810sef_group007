@@ -1,0 +1,41 @@
+'use strict';
+
+document.querySelectorAll('[data-copy]').forEach(button => {
+    button.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+            button.textContent = 'Copied';
+        } catch {
+            button.textContent = 'Select the code to copy';
+        }
+    });
+});
+
+const placement = document.querySelector('[name="placementLocation"]');
+const rescueStage = document.querySelector('[name="rescueStatus"]');
+const assignee = document.querySelector('[name="assignedTo"]');
+if (placement && rescueStage && assignee) {
+    const updateRequirements = () => {
+        placement.required = rescueStage.value === 'placed';
+        assignee.required = ['rescuing', 'placed'].includes(rescueStage.value);
+        for (const field of [placement, assignee]) {
+            const mark = document.querySelector(`[data-required-mark="${field.name}"]`);
+            if (mark) mark.hidden = !field.required;
+            field.setAttribute('aria-required', String(field.required));
+            field.setCustomValidity('');
+        }
+    };
+    rescueStage.addEventListener('change', updateRequirements);
+    updateRequirements();
+}
+
+// Reject whitespace-only required text before leaving the form.
+document.querySelectorAll('textarea, input:not([type="hidden"]):not([type="password"])').forEach(field => {
+    const validate = () => {
+        field.setCustomValidity(field.required && field.value && !field.value.trim() ?
+            'Please enter a value, not only spaces.' : '');
+    };
+    field.addEventListener('input', validate);
+    field.addEventListener('change', validate);
+    validate();
+});

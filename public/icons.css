@@ -1,0 +1,349 @@
+/* Shared, locally served line icons: no external fonts or image requests. */
+.icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.brand-mark .icon {
+    width: 27px;
+    height: 27px;
+    stroke-width: 1.8;
+}
+
+.nav-item>span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-item .icon {
+    width: 19px;
+    height: 19px;
+}
+
+.button .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.metric-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+}
+
+.metric-icon .icon {
+    width: 23px;
+    height: 23px;
+}
+
+.metric {
+    border-top: 3px solid #b4cbb5;
+}
+
+.metric-0 {
+    border-top-color: #e4c69c;
+}
+
+.metric-1 {
+    border-top-color: #b7c9dd;
+}
+
+.metric-2 {
+    border-top-color: #bed0ac;
+}
+
+.animal-avatar,
+.mini-animal {
+    width: 43px;
+    height: 43px;
+    border-radius: 14px;
+    background: #e9eee4;
+    color: #53745a;
+}
+
+.animal-avatar .icon,
+.mini-animal .icon {
+    width: 29px;
+    height: 29px;
+}
+
+.animal-avatar-cat {
+    background: #f9ebd5;
+    color: #9c713a;
+}
+
+.animal-avatar-dog {
+    background: #e5edf5;
+    color: #51748c;
+}
+
+.animal-id .mini-animal {
+    flex-shrink: 0;
+}
+
+.icon-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.heading-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #edf2e9;
+    color: #608066;
+    border-radius: 9px;
+    flex-shrink: 0;
+}
+
+.heading-icon .icon {
+    width: 18px;
+    height: 18px;
+}
+
+.aside-symbol .icon {
+    width: 25px;
+    height: 25px;
+}
+
+.animal-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.detail-pet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 17px;
+}
+
+.detail-pet .icon {
+    width: 36px;
+    height: 36px;
+}
+
+.welcome-banner {
+    background: radial-gradient(ellipse at 92% 8%, #f8f5e6 0, transparent 60%), #e7eee1;
+    min-height: 204px;
+}
+
+.welcome-banner>div:first-child {
+    flex: 1;
+    max-width: 610px;
+}
+
+.welcome-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.pet-pair {
+    position: relative;
+    width: 202px;
+    height: 150px;
+    flex-shrink: 0;
+}
+
+.pet-portrait {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 94px;
+    height: 101px;
+    border: 4px solid #fffaf0;
+    box-shadow: 0 7px 14px #34583e0b;
+    border-radius: 45px 45px 31px 31px;
+}
+
+.pet-portrait .icon {
+    width: 61px;
+    height: 61px;
+    stroke-width: 1.35;
+}
+
+.pet-cat {
+    left: 9px;
+    top: 15px;
+    transform: rotate(-10deg);
+    color: #8f693f;
+    background: #f1d9ae;
+}
+
+.pet-dog {
+    right: 4px;
+    top: 32px;
+    transform: rotate(10deg);
+    color: #547b79;
+    background: #d0e1d9;
+}
+
+.pet-spark {
+    position: absolute;
+    color: #8ba17e;
+}
+
+.pet-spark-one {
+    right: 8px;
+    top: 2px;
+    transform: rotate(20deg);
+}
+
+.pet-spark-two {
+    left: -9px;
+    bottom: 20px;
+    transform: rotate(-15deg);
+    color: #b59268;
+}
+
+.pet-spark .icon {
+    width: 19px;
+    height: 19px;
+}
+
+.pet-pair-caption {
+    display: none;
+}
+
+.login-story .pet-pair {
+    margin: 24px auto 0;
+    width: 230px;
+    height: 180px;
+}
+
+.login-story .pet-portrait {
+    width: 105px;
+    height: 114px;
+}
+
+.login-story .pet-portrait .icon {
+    width: 70px;
+    height: 70px;
+}
+
+.login-story .pet-pair-caption {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    color: #bed0bb;
+}
+
+.login-story .pet-spark {
+    color: #bed0bb;
+}
+
+@media (max-width: 1200px) {
+    .welcome-actions {
+        gap: 12px;
+    }
+
+    .welcome-actions .pet-pair {
+        width: 163px;
+    }
+
+    .welcome-actions .pet-portrait {
+        width: 78px;
+        height: 87px;
+    }
+
+    .welcome-actions .pet-portrait .icon {
+        width: 50px;
+        height: 50px;
+    }
+
+    .welcome-actions .pet-cat {
+        top: 22px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .welcome-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .welcome-actions .pet-pair {
+        height: 132px;
+    }
+}
+
+@media (max-width: 600px) {
+    .welcome-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .welcome-actions .pet-pair {
+        height: 120px;
+        width: 144px;
+    }
+
+    .welcome-actions .pet-portrait {
+        width: 70px;
+        height: 79px;
+    }
+
+    .welcome-actions .pet-portrait .icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .welcome-actions .pet-spark-two {
+        left: 0;
+        bottom: 0;
+    }
+
+    .welcome-actions .button {
+        padding: 9px 10px;
+    }
+
+    .welcome-banner {
+        gap: 8px;
+    }
+
+    .login-story .pet-pair {
+        width: 170px;
+        height: 125px;
+        margin: 10px auto 0;
+    }
+
+    .login-story .pet-portrait {
+        width: 76px;
+        height: 82px;
+    }
+
+    .login-story .pet-portrait .icon {
+        width: 49px;
+        height: 49px;
+    }
+
+    .login-story .pet-pair-caption {
+        display: none;
+    }
+
+    .metric-icon {
+        display: grid;
+        width: 29px;
+        height: 29px;
+    }
+
+    .metric-icon .icon {
+        width: 19px;
+        height: 19px;
+    }
+}

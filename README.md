@@ -1,281 +1,156 @@
-# COMP3810SEF Group Project — Group 007
+# Pawhaven — Animal Rescue & Adoption
 
-## 1. Project Information
+COMP3810SEF Group 007. Internal staff workspace using Express, EJS and MongoDB/Mongoose.
+Routes and business logic remain in server.js; models, views and assets remain in their
+course-standard folders. No public registration or built-in passwords.
 
-**Project Name:** Animal Rescue and Adoption Management System（流浪动物救助与领养管理系统）
+## Team responsibilities
 
-**Group:** 007
+| Member | Responsibilities |
+| --- | --- |
+| T | Authentication, profile/password, active accounts and team administration |
+| L | Animal creation, details and basic editing |
+| Y | Dashboard, filtering, pagination and shared UI |
+| M | Rescue assignment, placement and follow-ups |
+| N | Adoption, cancellation, closure, deletion and audit |
 
-This project is a server-side web application developed using Express.js, Node.js, MongoDB, Mongoose, and EJS.
+Add actual member names and student IDs before submission; these details must be supplied
+by the team. Keep accurate authorship and assistance disclosures where required.
 
-It supports the management of animal rescue records throughout the workflow from initial registration, rescue and placement, follow-up care, adoption registration, and case closure.
+## Setup
 
-### Main Functionalities
+Use Node.js 24 LTS. Run `npm ci`, copy `.env.example` to `.env`, and set MONGODB_URI to the
+Atlas URI including the database name animal_rescue_group007. URL-encode reserved characters
+in the database password. Add your connecting IP to the Atlas access list. Web accounts
+are separate from Atlas database users. Never commit .env, credentials or cookie files.
 
-- Staff login, logout, profile management, and password management.
-- Animal registration, detailed record viewing, and basic information editing.
-- Animal search with combined filters, registration date range, pagination, and sorting.
-- Dashboard statistics based on MongoDB records.
-- Rescue progress, staff assignment, and placement management.
-- Follow-up record creation, viewing, editing, and deletion.
-- Adoption availability, adoption registration, cancellation, and case closure.
-- Administrator-controlled deletion and associated-record cleanup.
-- RESTful APIs for CRUD operations.
+Run `npm start` and open http://127.0.0.1:8099. HOST and PORT can override the binding.
+Production requires HTTPS and SESSION_KEYS (comma-separated keys of at least 32 characters).
+Set TRUST_PROXY=1 only behind exactly one trusted reverse proxy. Development session keys
+are temporary, so restarting signs out existing sessions unless stable keys are supplied.
 
-## 2. Group Information
-
-| Member | Name / SID | Responsibilities |
-|---|---|---|
-| T | To be completed | Authentication, login/logout, profile, password, and access control |
-| L | To be completed | Animal creation, details, and basic information editing |
-| Y | To be completed | Dashboard, searching, filtering, date range selection, pagination, and sorting |
-| M | To be completed | Rescue management, staff assignment, placement, and follow-up CRUD |
-| N | To be completed | Adoption, case closure, deletion, and related data consistency |
-
-Each member contributes to the corresponding frontend, backend, database operations, testing, and integration.
-
-## 3. Project File Introduction
-
-### Project Structure
-
-```text
-comp3810sef_group007/
-├── server.js
-├── package.json
-├── package-lock.json
-├── models/
-│   ├── User.js
-│   ├── Animal.js
-│   ├── FollowUp.js
-│   ├── Adoption.js
-│   ├── DeletionLog.js
-│   └── constants.js
-├── views/
-│   ├── header.ejs
-│   ├── footer.ejs
-│   ├── dashboard.ejs
-│   ├── list.ejs
-│   ├── login.ejs
-│   ├── profile.ejs
-│   ├── password.ejs
-│   ├── create.ejs
-│   ├── details.ejs
-│   ├── edit.ejs
-│   ├── rescue.ejs
-│   ├── followup.ejs
-│   ├── adoption.ejs
-│   ├── close.ejs
-│   └── delete.ejs
-├── public/
-│   ├── style.css
-│   ├── preview.js
-│   ├── date_range.js
-│   └── date_range.css
-└── README.md
-```
-
-Other supporting EJS partials and module documentation may also be present.
-
-### File Descriptions
-
-- `server.js`: Express server configuration, session authentication, routes, validation, business logic, and database initialization.
-- `package.json`: Project dependencies and npm scripts.
-- `models/`: Mongoose schemas, relationships, validation rules, and database models.
-- `views/`: EJS templates for the application pages.
-- `public/style.css`: Shared user-interface styling.
-- `public/preview.js`: Preview-related client-side behavior for applicable prototype elements.
-- `public/date_range.js`: Date range calendar interaction for animal search.
-- `public/date_range.css`: Date range calendar styling.
-
-## 4. Database Design
-
-**Database:** `animal_rescue_group007`
-
-**Database Technology:** MongoDB with Mongoose.
-
-The application uses the following main collections:
-
-| Collection | Description |
-|---|---|
-| `users` | Staff and administrator accounts |
-| `animals` | Animal records, rescue status, and adoption status |
-| `followups` | Rescue follow-up records |
-| `adoptions` | Adoption information and associated history |
-| `deletionlogs` | Administrator deletion audit records |
-
-MongoDB ObjectId values are used to identify and reference related records. Mongoose timestamps record creation and modification times.
-
-Date values are stored in UTC and presented in the application using UTC+8 (Beijing time).
-
-Passwords are stored as hashes rather than plaintext.
-
-## 5. Installation and Running
-
-### Requirements
-
-- Ubuntu or another supported operating system
-- Node.js 24
-- npm
-- MongoDB (local or MongoDB Atlas)
-
-### Install Dependencies
+Existing staff01 and admin01 retain their passwords. To initialise a new administrator:
 
 ```bash
-npm ci
+read -rsp "Initial administrator password: " ADMIN_PASSWORD; printf '\n'
+printf '%s' "$ADMIN_PASSWORD" | node --env-file-if-exists=.env server.js --create-admin
+unset ADMIN_PASSWORD
 ```
 
-### Database Configuration
+This creates admin01 only if absent. ADMIN_USERNAME overrides the name. Existing accounts
+are never overwritten. Administrators create staff in Team Accounts. Staff can change their
+own display name, phone and password. Team Accounts enables/disables staff without deleting
+historical references; administrator accounts are protected from disabling here.
 
-Set `MONGODB_URI` to the connection string of the chosen MongoDB database. The connection string must not be committed to GitHub.
+## Database and migration
 
-A sample URI format is:
-
-```text
-mongodb+srv://USERNAME:PASSWORD@CLUSTER_HOST/animal_rescue_group007
-```
-
-Replace the placeholders locally.
-
-### Start the Application
+Use Atlas or a local replica set. A standalone MongoDB cannot support the required
+transactions. For a local test replica set, install mongod and mongosh, then run:
 
 ```bash
-CONNECT_DB=1 Y_PREVIEW=0 npm start
+mkdir -p /tmp/group007-test-db
+mongod --replSet group007rs --bind_ip 127.0.0.1 --port 27018 --dbpath /tmp/group007-test-db --logpath /tmp/group007-test-db/mongod.log --fork
+mongosh --port 27018 --eval 'rs.initiate({_id:"group007rs",members:[{_id:0,host:"127.0.0.1:27018"}]})'
 ```
 
-Open:
+Startup creates declared indexes. It replaces only the legacy full unique adoption animalId_1
+index with one_current_adoption, a partial unique index for uncancelled registrations. Other
+indexes and business data are retained. Missing isActive fields become true. Only the known
+original display names of staff01/admin01 become Staff 01/Administrator 01; custom names stay
+unchanged. Historical animal descriptions, ObjectIds, animal codes and stored enum values
+are preserved. Migration is safe to repeat.
 
-```text
-http://127.0.0.1:8099
-```
+Every rescue/follow-up/adoption mutation locks the same animal in a transaction. Follow-up
+changes advance animals.updatedAt. Concurrent closure/deletion cannot leave orphan notes or
+allow writes to closed records. No sample records are inserted at startup.
 
-The database must be reachable before launching the application.
+## Workflow and permissions
 
-## 6. Login and Logout Guide
+Staff manage open animal records, rescue, adoption and their own follow-ups. Administrators
+also manage staff access, edit/delete any follow-up and delete incorrect OPEN animal records
+with a reason and audit trail. Closed records are read-only for BOTH roles. Disabled users
+lose access on their next request and cannot sign in; historical references remain intact.
 
-The system requires authenticated staff access to protected webpages.
+Rescue progresses pending → rescuing → placed. Rescuing/placed require an assignee; placed
+requires a location. Opening adoption requires placement and human health confirmation.
+Register → edit or cancel → re-register if needed → complete handover and close. Cancellation
+retains its reason/operator/time and returns the animal to available. Closing updates the
+animal and adoption together. Deletion removes associated records within the same transaction
+and retains a separate audit log.
 
-For local development, a test staff account can be initialized using the explicitly provided test-user command in `server.js`.
+## API contract
 
-**Test username:** `l_demo_staff`
-
-The password is defined locally when creating the test user and is not included in this repository.
-
-To log in, visit `/login`, enter the valid credentials, and submit the form.
-
-To log out, use the application logout control.
-
-Administrators have additional permissions, including deletion of animal records.
-
-## 7. Web CRUD Operation Guide
-
-### Create
-
-1. Log in.
-2. Open **新增动物**.
-3. Complete the required animal information.
-4. Submit the form.
-5. Confirm the record appears in the animal list.
-
-### Read
-
-1. Open **动物档案**.
-2. Filter by animal type, discovery location, rescue status, adoption status, or registration date range.
-3. Use sorting and pagination to navigate the results.
-4. Open an animal record to view details.
-
-### Update
-
-1. Open the animal detail page.
-2. Edit basic information, rescue progress, placement, or follow-up records as permitted.
-3. Submit and refresh the page to verify persistence.
-
-### Delete
-
-1. Log in using an authorized administrator account.
-2. Open the corresponding animal deletion page.
-3. Review the deletion details and provide any required confirmation.
-4. Confirm that associated records are cleaned up according to the application rules.
-
-## 8. Adoption Workflow
-
-1. Register a rescued animal.
-2. Assign a responsible staff member.
-3. Complete rescue and placement.
-4. Confirm the animal is suitable for adoption.
-5. Open adoption availability.
-6. Register the adopter and contact information.
-7. Complete adoption and close the case.
-
-Closed animal records remain available for historical reference unless explicitly deleted by an authorized administrator.
-
-## 9. RESTful API Guide
-
-The following endpoints are implemented as part of the application. Protected API operations require a valid login session; write operations also require CSRF validation.
+All business APIs require a session cookie. Mutations require X-CSRF-Token. Obtain the token
+from GET /api/csrf, then obtain a fresh token after login (login rotates it).
+Success: {"success":true,"data":...}. Failure: {"success":false,"error":{"code":"...","message":"..."}}.
+Follow-up list/create/edit now use this same envelope.
 
 | Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/api/animals` | Search animal records |
-| GET | `/api/stats` | Retrieve dashboard statistics |
-| GET | `/api/animals/:id` | Read an animal record |
-| POST | `/api/animals` | Create an animal record |
-| PUT | `/api/animals/:id` | Update basic animal information |
-| PUT | `/api/animals/:id/rescue` | Update rescue information |
-| GET | `/api/animals/:id/followups` | Read follow-up records |
-| POST | `/api/animals/:id/followups` | Create a follow-up record |
-| PUT | `/api/animals/:id/followups/:followId` | Update a follow-up record |
-| DELETE | `/api/animals/:id/followups/:followId` | Delete a follow-up record |
-| GET | `/api/animals/:id/adoption` | Read adoption information |
-| PUT | `/api/animals/:id/adoption-status` | Change adoption availability |
-| POST | `/api/animals/:id/adoption` | Register an adoption |
-| PUT | `/api/animals/:id/close` | Complete an adoption and close the case |
-| DELETE | `/api/animals/:id` | Delete an animal record (administrator only) |
+| --- | --- | --- |
+| GET | /api/csrf | Issue security token |
+| POST | /api/login, /api/logout | Sign in/out |
+| GET, PUT | /api/profile | Read/update displayName and phone |
+| PUT | /api/password | currentPassword, newPassword, confirmPassword |
+| GET, POST | /api/users | Administrator list/create staff |
+| PUT | /api/users/:id/status | Set staff isActive boolean |
+| GET | /api/stats | Rescue/adoption counts and recent records |
+| GET, POST | /api/animals | Search/register animals |
+| GET, PUT, DELETE | /api/animals/:id | Read/edit/delete animal |
+| PUT | /api/animals/:id/rescue | Rescue status, assignee and placement |
+| GET, POST | /api/animals/:id/followups | List/create follow-ups |
+| PUT, DELETE | /api/animals/:id/followups/:followId | Edit/delete follow-up |
+| GET, POST, PUT | /api/animals/:id/adoption | Read/register/edit adoption |
+| PUT | /api/animals/:id/adoption-status | available or not_open |
+| PUT | /api/animals/:id/adoption/cancel | Cancel adoption |
+| PUT | /api/animals/:id/close | Complete adoption and close |
 
-### API Test Example
+Animal editing accepts six basic fields and expectedUpdatedAt. Rescue and follow-up edit/delete
+REQUIRE expectedUpdatedAt from the latest record; stale versions return 409 and missing/invalid
+versions return 400. Adoption edit/cancel/close require adoptionId and adoptionVersion from the
+latest GET adoption result. Do not generate these values yourself. Opening adoption requires
+healthConfirmed:true. Cancellation requires confirm:true and cancellationReason; deletion
+requires confirm:true and deletionReason; closure requires confirm:true.
 
-A non-authenticated request to a protected API can be tested with:
+Animal query fields: animalType, foundLocation, rescueStatus, adoptionStatus, dateFrom, dateTo,
+sort, page. Dates use YYYY-MM-DD inclusive Hong Kong days. Page size is 3. Sort accepts
+updated_desc, updated_asc, created_desc and created_asc. Date, page and enum values are validated.
+
+## Curl demonstration
+
+Run these operations against a disposable test environment. Requires curl and Node.js.
+Supply a staff or administrator password locally, not in this file.
 
 ```bash
-curl -i http://127.0.0.1:8099/api/animals
+BASE=http://127.0.0.1:8099
+COOKIE_FILE=$(mktemp)
+TOKEN=$(curl -s -c "$COOKIE_FILE" "$BASE/api/csrf" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).data.csrfToken')
+read -rp "Username: " LOGIN_USER
+read -rsp "Password: " LOGIN_PASSWORD; printf '\n'
+export LOGIN_USER LOGIN_PASSWORD
+node -e 'process.stdout.write(JSON.stringify({username:process.env.LOGIN_USER,password:process.env.LOGIN_PASSWORD}))' | curl -s -b "$COOKIE_FILE" -c "$COOKIE_FILE" -H "X-CSRF-Token: $TOKEN" -H 'Content-Type: application/json' --data-binary @- "$BASE/api/login"
+unset LOGIN_USER LOGIN_PASSWORD
+TOKEN=$(curl -s -b "$COOKIE_FILE" -c "$COOKIE_FILE" "$BASE/api/csrf" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).data.csrfToken')
+curl -s -b "$COOKIE_FILE" "$BASE/api/animals"
+CREATED=$(curl -s -b "$COOKIE_FILE" -H "X-CSRF-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"animalType":"cat","appearance":"API test cat","foundLocation":"Test shelter","healthStatus":"Pending assessment","contactName":"Test Contact","contactPhone":"00000000"}' "$BASE/api/animals")
+ANIMAL_ID=$(printf '%s' "$CREATED" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).data._id')
+VERSION=$(printf '%s' "$CREATED" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).data.updatedAt')
+export VERSION
+node -e 'process.stdout.write(JSON.stringify({animalType:"cat",appearance:"Updated test cat",foundLocation:"Test shelter",healthStatus:"Assessed",contactName:"Test Contact",contactPhone:"00000000",expectedUpdatedAt:process.env.VERSION}))' | curl -s -X PUT -b "$COOKIE_FILE" -H "X-CSRF-Token: $TOKEN" -H 'Content-Type: application/json' --data-binary @- "$BASE/api/animals/$ANIMAL_ID"
+# Deletion succeeds only for an administrator and an open record.
+curl -s -X DELETE -b "$COOKIE_FILE" -H "X-CSRF-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"confirm":true,"deletionReason":"Disposable API test"}' "$BASE/api/animals/$ANIMAL_ID"
+rm -f "$COOKIE_FILE"
+unset VERSION
 ```
 
-Expected behavior: HTTP 401 when no valid login session is provided.
+## Tests and submission
 
-An authenticated request requires the login cookie. Write operations additionally require the CSRF token associated with that session.
+Run `npm test` and `npm run test:n` with the local replica set available. Both use random
+isolated databases, then remove only their own databases. TEST_MONGODB_URI overrides the test
+server; do not use the shared business database for tests. The application suite checks real
+login, role boundaries, staff management, English pages, CRUD, stale updates, filter limits,
+disabled users and follow-up/closure/deletion races. The adoption suite additionally injects
+failures to verify rollback, legacy index migration and audit integrity.
 
-Before final submission, document and verify the complete GET, POST, PUT, and DELETE `curl` examples using test credentials and test animal IDs.
-
-## 10. Testing and Validation
-
-The integration test plan includes:
-
-- Successful and unsuccessful login.
-- Session expiration and logout.
-- Unauthorized access rejection.
-- Animal CRUD and validation.
-- Search, date range filtering, sorting, and pagination.
-- Rescue progress and follow-up management.
-- Author/administrator authorization for follow-up edits and deletions.
-- Adoption status transitions and case closure.
-- Duplicate-request rejection.
-- Referential integrity and transaction behavior.
-- MongoDB data persistence after page refresh.
-
-Only tests actually executed and verified should be marked as passed in the final submission.
-
-## 11. Submission Notes
-
-The submission includes the source code, required package files, Mongoose models, EJS templates, public assets, and this README.
-
-Do not include:
-
-- `node_modules/`
-- Database passwords or full connection strings
-- Session secrets
-- Personal access tokens
-- Unnecessary test data exports
-
-The final zip file should follow the course naming requirement:
-
-```text
-comp3810sef_group007.zip
-```
+Submit server.js, package files, README, models, views and public assets. Exclude node_modules,
+.env, cookies, local database files and temporary screenshots. Source must remain readable,
+with indented multi-line EJS, JavaScript and CSS. Keep licences and accurate attribution.

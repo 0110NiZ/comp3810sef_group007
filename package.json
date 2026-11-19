@@ -1,10 +1,10 @@
 {
   "name": "comp3810sef_group007",
   "version": "1.0.0",
-  "description": "",
+  "description": "Pawhaven internal animal rescue and adoption workspace",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_ENV=test node test-app.js",
     "start": "node --env-file-if-exists=.env server.js",
     "test:n": "NODE_ENV=test node server.js --test-n"
   },

@@ -1,151 +1,75 @@
-
 <%- include('header') %>
-
-<%
-    const account = (typeof profile !== 'undefined' && profile)
-        ? profile
-        : currentUser;
-
-    const displayName = account.displayName || '';
-    const username = account.username || '';
-    const phone = account.phone || '';
-    const roleText = account.role === 'admin'
-        ? '管理员'
-        : '工作人员';
-
-    const avatarText = (displayName || username)
-        .charAt(0)
-        .toUpperCase();
-%>
-
 <div class="page-heading">
     <div>
-        <span class="eyebrow">MY ACCOUNT</span>
-        <h1>个人资料</h1>
-        <p>维护工作联系信息，方便救助协作。</p>
+        <span class="eyebrow">YOUR WORKSPACE IDENTITY</span>
+        <h1>My Account</h1>
+        <p>Keep your contact details up to date for your team.</p>
     </div>
-
-    <a class="button" href="/password">
-        修改密码
-    </a>
 </div>
-
-<div class="form-layout">
-
-    <section class="panel">
-
-        <div class="profile-heading">
-            <span class="profile-avatar">
-                <%= avatarText %>
-            </span>
-
-            <div>
-                <h2><%= displayName %></h2>
-                <span class="muted">
-                    已登录 · <%= roleText %>
-                </span>
-            </div>
-        </div>
-
-        <% if (typeof error === 'string' && error) { %>
-            <div class="form-feedback" role="alert">
-                <%= error %>
-            </div>
-        <% } %>
-
-        <% if (typeof success === 'string' && success) { %>
-            <div class="form-feedback" role="status">
-                <%= success %>
-            </div>
-        <% } %>
-
-        <form method="POST" action="/profile">
-
-            <input
-                type="hidden"
-                name="_csrf"
-                value="<%= csrfToken %>"
-            >
-
-            <div class="form-grid">
-
-                <label>
-                    用户名
-                    <input
-                        value="<%= username %>"
-                        readonly
-                    >
-                </label>
-
-                <label>
-                    角色
-                    <input
-                        value="<%= roleText %>"
-                        readonly
-                    >
-                </label>
-
-                <label>
-                    显示姓名 <em>*</em>
-                    <input
-                        name="displayName"
-                        value="<%= displayName %>"
-                        required
-                        maxlength="80"
-                    >
-                </label>
-
-                <label>
-                    联系电话
-                    <input
-                        name="phone"
-                        type="tel"
-                        value="<%= phone %>"
-                        placeholder="填写工作联系电话"
-                        maxlength="30"
-                    >
-                </label>
-
-            </div>
-
-            <div class="form-bottom">
-                <p>
-                    保存后更新账号资料，用户名和角色不可自行修改。
-                </p>
-
-                <div class="actions">
-                    <a class="button" href="/">
-                        取消
-                    </a>
-
-                    <button class="primary" type="submit">
-                        保存资料修改
-                    </button>
-                </div>
-            </div>
-
-        </form>
-
-    </section>
-
-    <aside class="panel form-aside">
-
-        <span class="aside-symbol">◎</span>
-
-        <h2>账号与权限</h2>
-
-        <p>
-            个人资料用于工作联系。
-            角色由管理员管理，
-            不能通过个人资料页面自行修改。
+<% if (error) { %>
+<p class="warning-box" role="alert">
+    <%= error %>
+</p>
+<% } %>
+<% if (success) { %>
+<p class="form-feedback" role="status">
+    <%= success %>
+</p>
+<% } %>
+<section class="panel account-summary">
+    <span class="profile-avatar">
+        <%= profile.displayName.slice(0, 1).toUpperCase() %>
+    </span>
+    <div>
+        <h2>
+            <%= profile.displayName %>
+        </h2>
+        <p class="muted">@<%= profile.username %>
         </p>
-
-        <a class="button" href="/password">
-            修改密码 →
-        </a>
-
-    </aside>
-
+    </div>
+    <span class="badge status-placed">
+        <%= profile.role === 'admin' ? 'Administrator' : 'Staff' %>
+    </span>
+</section>
+<div class="account-layout spaced">
+    <section class="panel">
+        <div class="section-heading">
+            <h2 class="icon-heading">
+                <span class="heading-icon"><%- include('icon', { name: 'user' }) %></span>Contact Details
+            </h2>
+            <span class="muted">Visible to your team</span>
+        </div>
+        <form method="POST" action="/profile">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-grid">
+                <label>Display Name <em>*</em>
+                    <input name="displayName" value="<%= profile.displayName %>" required maxlength="80"
+                        autocomplete="name">
+                </label>
+                <label>Phone Number
+                    <input type="tel" name="phone" value="<%= profile.phone || '' %>" maxlength="30"
+                        autocomplete="tel" placeholder="Work contact number">
+                </label>
+            </div>
+            <div class="form-bottom">
+                <p>Your username and role are managed separately.</p>
+                <button type="submit" class="primary">Save Changes</button>
+            </div>
+        </form>
+    </section>
+    <section class="panel security-panel">
+        <span class="eyebrow">ACCOUNT SECURITY</span>
+        <h2 class="icon-heading">
+            <span class="heading-icon"><%- include('icon', { name: 'shield' }) %></span>Password & Security
+        </h2>
+        <p>Use a unique password. Changing it signs out your other sessions.</p>
+        <a class="button spaced" href="/password">Change Password →</a>
+        <div class="panel-note">
+            <strong>Access level</strong>
+            <p>
+                <%= profile.role === 'admin' ? 'Manage staff accounts and remove incorrect open records, alongside daily rescue work.' : 'Manage animal care, follow-ups and adoption. Account administration is restricted.' %>
+            </p>
+        </div>
+    </section>
 </div>
-
 <%- include('footer') %>

@@ -1,100 +1,108 @@
-
 <%- include('header') %>
+<% const hasError = typeof error === 'string' && error;
+const isStale = typeof stale !== 'undefined' && stale;
+const noteValue = typeof draftContent === 'string' ? draftContent : followUp ? followUp.content : '';
+const versionValue = typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt :
+    followUp ? followUp.updatedAt.toISOString() : ''; %>
 
 <div class="page-heading">
     <div>
         <span class="eyebrow">CARE JOURNAL</span>
-        <h1><%= title %></h1>
-        <p><%= animal.animalCode %> · <%= animal.appearance %></p>
+        <h1>
+            <%= title %>
+        </h1>
+        <p>
+            <%= animal.animalCode %> · <%= animal.appearance %>
+        </p>
     </div>
 
     <a class="button" href="/animals/<%= animal._id %>">
-        返回详情
+        Back to Details
     </a>
 </div>
 
 <section class="panel form-panel">
+    <% if (hasError) { %>
+    <div class="warning-box" role="alert">
+        <strong>Your changes have not been saved.</strong>
+        <p><%= error %></p>
+        <% if (isStale) { %>
+        <p>Copy your notes before reloading, then compare them with the latest record.</p>
+        <a class="button" href="/animals/<%= animal._id %>/followups/<%= mode === 'create' ? 'new' : followUp._id + '/' + mode %>">Reload and Review</a>
+        <% } %>
+    </div>
+    <% } %>
     <% if (mode === 'delete') { %>
 
-        <div class="warning-box">
-            <h2>确认要删除这条跟进记录？</h2>
-            <p>只有记录作者或管理员可以执行删除。</p>
-        </div>
+    <div class="warning-box">
+        <h2>Delete this follow-up?</h2>
+        <p>Only the author or an administrator can delete this entry.</p>
+    </div>
 
-        <blockquote><%= followUp.content %></blockquote>
+    <blockquote>
+        <%= followUp.content %>
+    </blockquote>
 
-        <form
-            method="POST"
-            action="/animals/<%= animal._id %>/followups/<%= followUp._id %>/delete"
-        >
-            <input
-                type="hidden"
-                name="_csrf"
-                value="<%= csrfToken %>"
-            >
+    <form method="POST" action="/animals/<%= animal._id %>/followups/<%= followUp._id %>/delete">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-            <label class="checkbox">
-                <input type="checkbox" required>
-                我已核对这条记录
-            </label>
+        <input type="hidden" name="expectedUpdatedAt" value="<%= versionValue %>">
+        <label class="checkbox">
+            <input type="checkbox" required>
+            I have reviewed this entry
+        </label>
 
-            <div class="form-bottom">
-                <p>删除后将无法在当前页面恢复该记录。</p>
+        <div class="form-bottom">
+            <p>This entry cannot be restored after deletion.</p>
 
-                <div class="actions">
-                    <a class="button" href="/animals/<%= animal._id %>">
-                        取消
-                    </a>
+            <div class="actions">
+                <a class="button" href="/animals/<%= animal._id %>">
+                    Cancel
+                </a>
 
-                    <button class="primary" type="submit">
-                        确认删除
-                    </button>
-                </div>
+                <button class="primary" type="submit" <%= isStale ? 'disabled' : '' %>>
+                    Confirm Deletion
+                </button>
             </div>
-        </form>
+        </div>
+    </form>
 
     <% } else { %>
 
-        <h2>
-            <%= mode === 'create' ? '记录本次跟进' : '修改跟进内容' %>
-        </h2>
+    <h2>
+        <%= mode === 'create' ? 'New Follow-up' : 'Edit Follow-up' %>
+    </h2>
 
-        <form
-            method="POST"
-            action="/animals/<%= animal._id %>/followups/<%= mode === 'create' ? 'new' : followUp._id + '/edit' %>"
-        >
-            <input
-                type="hidden"
-                name="_csrf"
-                value="<%= csrfToken %>"
-            >
+    <form method="POST"
+        action="/animals/<%= animal._id %>/followups/<%= mode === 'create' ? 'new' : followUp._id + '/edit' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-            <label>
-                跟进内容 <em>*</em>
+        <% if (followUp) { %>
+        <input type="hidden" name="expectedUpdatedAt" value="<%= versionValue %>">
+        <% } %>
+        <label>
+            Notes <em>*</em>
 
-                <textarea
-                    name="content"
-                    rows="7"
-                    required
-                    maxlength="2000"
-                    placeholder="记录治疗、照护和现场观察等情况"
-                ><%= followUp ? followUp.content : '' %></textarea>
-            </label>
+            <textarea name="content" rows="7" required maxlength="2000"
+                aria-describedby="notes-hint"
+                placeholder="Record treatment, care and observations"><%= noteValue %></textarea>
+            <small class="field-hint" id="notes-hint">Required · Up to 2,000 characters. Include observations, care given and next steps.</small>
+        </label>
 
-            <div class="form-bottom">
-                <p>记录将保存到 MongoDB，便于后续查看。</p>
+        <div class="form-bottom">
+            <p>Keep a clear record for the next member of the care team.</p>
 
-                <div class="actions">
-                    <a class="button" href="/animals/<%= animal._id %>">
-                        取消
-                    </a>
+            <div class="actions">
+                <a class="button" href="/animals/<%= animal._id %>">
+                    Cancel
+                </a>
 
-                    <button class="primary" type="submit">
-                        <%= mode === 'create' ? '保存跟进记录' : '保存修改' %>
-                    </button>
-                </div>
+                <button class="primary" type="submit" <%= isStale ? 'disabled' : '' %>>
+                    <%= mode === 'create' ? 'Save Follow-up' : 'Save Changes' %>
+                </button>
             </div>
-        </form>
+        </div>
+    </form>
 
     <% } %>
 </section>

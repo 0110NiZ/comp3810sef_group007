@@ -1,4 +1,3 @@
-
 (() => {
     'use strict';
 
@@ -34,16 +33,16 @@
 
     function updateText() {
         if (from.value && to.value) {
-            trigger.textContent = `${from.value} 至 ${to.value}`;
+            trigger.textContent = `${from.value} to ${to.value}`;
         } else if (from.value) {
-            trigger.textContent = `${from.value} 至 请选择结束日期`;
+            trigger.textContent = `${from.value} to Select end date`;
         } else {
-            trigger.textContent = '选择起止日期';
+            trigger.textContent = 'Select Date Range';
         }
 
-        hint.textContent = selectingEnd
-            ? '请选择结束日期（可与开始日期相同）'
-            : '第一次选择开始日期，第二次选择结束日期';
+        hint.textContent = selectingEnd ?
+            'Choose the end date (the same day is allowed)' :
+            'Choose the start date, then the end date';
     }
 
     function closeCalendar() {
@@ -52,7 +51,11 @@
     }
 
     function renderCalendar() {
-        title.textContent = `${year} 年 ${month} 月`;
+        title.textContent = new Intl.DateTimeFormat('en-GB', {
+            month: 'long',
+            year: 'numeric',
+            timeZone: 'UTC'
+        }).format(new Date(Date.UTC(year, month - 1, 1)));
         grid.replaceChildren();
 
         const firstWeekday =
@@ -88,12 +91,12 @@
 
             button.addEventListener('click', () => {
                 if (!selectingEnd) {
-                    // 第一次点击：开始日期
+
                     from.value = date;
                     to.value = '';
                     selectingEnd = true;
                 } else {
-                    // 第二次点击：结束日期
+
                     if (date < from.value) {
                         to.value = from.value;
                         from.value = date;

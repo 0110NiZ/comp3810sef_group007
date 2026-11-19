@@ -1,23 +1,25 @@
-
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>工作人员登录 · 栖伴</title>
+    <title>Staff Sign In · Pawhaven</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/icons.css">
+    <link rel="stylesheet" href="/workspace.css">
 </head>
 
 <body class="login-body">
     <main class="login-shell">
 
-        <!-- 左侧：原有品牌展示区域，保持不变 -->
+
         <section class="login-story">
             <a class="brand" href="/">
-                <span class="brand-mark">爪</span>
+                <span class="brand-mark"><%- include('icon', { name: 'paw' }) %></span>
                 <span>
-                    栖伴
-                    <small>动物救助与领养管理</small>
+                    Pawhaven
+                    <small>Rescue & Adoption</small>
                 </span>
             </a>
 
@@ -27,107 +29,83 @@
                 </span>
 
                 <h1>
-                    每一次守护，<br>
-                    都值得被记录。
+                    A little care.
+                    <br>
+                    A new beginning.
                 </h1>
 
                 <p>
-                    连接发现、救助与领养，<br>
-                    让它们离温暖的家更近一步。
+                    Connect rescue, care and adoption.
+                    <br>
+                    Help every animal find a home.
                 </p>
 
-                <div class="login-animal" aria-hidden="true">
-                    🐈　🐕
-                </div>
+                <%- include('pet-pair') %>
             </div>
 
             <span class="story-bottom">
-                救助有记录 · 跟进有责任 · 领养有归处
+                Rescue. Care. A place to belong.
             </span>
         </section>
 
-        <!-- 右侧：工作人员真实登录表单 -->
+
         <section class="login-form">
             <span class="eyebrow">WELCOME BACK</span>
 
-            <h2>工作人员登录</h2>
+            <h2>Staff Sign In</h2>
 
-            <p class="muted">开始今天的救助工作</p>
+            <p class="muted">Your work makes a difference.</p>
 
-            <!--
-                使用 POST 向 Express 的 /login 路由提交。
-                不再使用原来的 method="dialog" 和 data-preview。
-            -->
+
             <form method="POST" action="/login">
 
-                <!--
-                    为后续 CSRF 保护预留字段。
-                    由服务器提供 csrfToken。
-                -->
+
                 <% if (typeof csrfToken === 'string' && csrfToken) { %>
-                    <input
-                        type="hidden"
-                        name="_csrf"
-                        value="<%= csrfToken %>"
-                    >
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <% } %>
 
                 <div class="form-stack">
 
-                    <!-- 用户名 -->
+
                     <label>
-                        用户名
-                        <input
-                            name="username"
-                            type="text"
-                            autocomplete="username"
-                            placeholder="请输入用户名"
-                            minlength="3"
-                            maxlength="40"
-                            value="<%= typeof username === 'string' ? username : '' %>"
-                            required
-                        >
+                        Username
+                        <input name="username" type="text" autocomplete="username"
+                            placeholder="Enter your username" minlength="3" maxlength="40"
+                            value="<%= typeof username === 'string' ? username : '' %>" required>
                     </label>
 
-                    <!-- 密码 -->
+
                     <label>
-                        密码
-                        <input
-                            name="password"
-                            type="password"
-                            autocomplete="current-password"
-                            placeholder="请输入密码"
-                            required
-                        >
+                        Password
+                        <input name="password" type="password" autocomplete="current-password"
+                            placeholder="Enter your password" required>
                     </label>
 
                 </div>
 
-                <!-- 服务器返回登录失败原因时显示 -->
+
                 <% if (typeof error === 'string' && error) { %>
-                    <div class="form-feedback" role="alert">
-                        <%= error %>
-                    </div>
+                <div class="form-feedback" role="alert">
+                    <%= error %>
+                </div>
                 <% } %>
 
                 <p class="login-hint">
-                    请使用已分配的工作人员账号登录。
+                    Use the account assigned by your administrator.
                 </p>
 
-                <button
-                    class="primary full-button"
-                    type="submit"
-                >
-                    登录系统
+                <button class="primary full-button" type="submit">
+                    Sign In
                 </button>
 
             </form>
 
             <p class="muted login-hint">
-                仅限授权工作人员使用。
+                For authorised staff only.
             </p>
         </section>
 
     </main>
 </body>
+
 </html>

@@ -1,1 +1,17 @@
-<%- include('header') %><section class="panel"><h1><%= title %></h1><p class="spaced"><%= message %></p><div class="actions"><a class="button primary" href="/">返回首页</a><a class="button" href="/animals">动物列表</a></div></section><%- include('footer') %>
+<%- include('header') %>
+<section class="panel form-panel result-panel">
+    <span class="eyebrow">WORKSPACE NOTICE</span>
+    <h1>
+        <%= title %>
+    </h1>
+    <p class="spaced" role="status">
+        <%= message %>
+    </p>
+    <div class="actions">
+        <a class="button primary" href="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/animals' %>">
+            <%= typeof returnUrl !== 'undefined' && returnUrl.startsWith('/animals/') ? 'Back to Details' : 'Back to Records' %>
+        </a>
+        <a class="button" href="/">Dashboard</a>
+    </div>
+</section>
+<%- include('footer') %>

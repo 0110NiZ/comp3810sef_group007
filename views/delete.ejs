@@ -1,5 +1,57 @@
 <%- include('header') %>
-<div class="page-heading"><div><span class="eyebrow">RECORD MANAGEMENT</span><h1>删除动物档案</h1><p>仅用于管理员处理误录或重复记录。</p></div><a class="button" href="/animals/<%= animal._id %>/adoption">返回领养管理</a></div>
-<% if (error) { %><div class="warning-box" role="alert"><p><%= error %></p></div><% } %>
-<section class="panel form-panel"><div class="warning-box"><h2>此操作不可撤销</h2><p>将删除这只动物及其全部跟进、领养记录。删除人、时间、动物编号及原因会单独留存。已结案档案不允许删除。</p></div><dl><dt>动物编号</dt><dd><%= animal.animalCode %></dd><dt>外观描述</dt><dd><%= animal.appearance %></dd><dt>发现地点</dt><dd><%= animal.foundLocation %></dd><dt>领养状态</dt><dd><%= labels.adoptionStatuses[animal.adoptionStatus] %></dd></dl>
-<form method="POST" action="/animals/<%= animal._id %>/delete" class="spaced"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><label>删除原因 <em>*</em><textarea name="deletionReason" rows="4" maxlength="1000" required><%= values.deletionReason %></textarea></label><label class="checkbox spaced"><input type="checkbox" name="confirm" value="yes" required>我已确认这是误录或重复档案，并同意删除关联记录</label><div class="form-bottom"><a class="button" href="/animals/<%= animal._id %>/adoption">取消</a><button class="primary" type="submit">确认删除档案</button></div></form></section><%- include('footer') %>
+<div class="page-heading">
+    <div>
+        <span class="eyebrow">RECORD MANAGEMENT</span>
+        <h1>Delete Animal Record</h1>
+        <p>For administrators to remove incorrect or duplicate records.</p>
+    </div>
+    <a class="button" href="/animals/<%= animal._id %>/adoption">Back to Adoption</a>
+</div>
+<% if (error) { %>
+<div class="warning-box" role="alert">
+    <p>
+        <%= error %>
+    </p>
+</div>
+<% } %>
+<section class="panel form-panel">
+    <div class="warning-box">
+        <h2>This action cannot be undone</h2>
+        <p>This deletes the animal and its follow-ups and adoptions. An audit record retains who deleted it,
+            when, its code and the reason. Closed cases cannot be deleted.</p>
+    </div>
+    <dl>
+        <dt>Animal Code</dt>
+        <dd>
+            <%= animal.animalCode %>
+        </dd>
+        <dt>Appearance</dt>
+        <dd>
+            <%= animal.appearance %>
+        </dd>
+        <dt>Found Location</dt>
+        <dd>
+            <%= animal.foundLocation %>
+        </dd>
+        <dt>Adoption Status</dt>
+        <dd>
+            <%= labels.adoptionStatuses[animal.adoptionStatus] %>
+        </dd>
+    </dl>
+    <form method="POST" action="/animals/<%= animal._id %>/delete" class="spaced">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Reason for Deletion <em>*</em>
+            <textarea name="deletionReason" rows="4" maxlength="1000"
+                required><%= values.deletionReason %></textarea>
+        </label>
+        <label class="checkbox spaced">
+            <input type="checkbox" name="confirm" value="yes" required>I confirm this record is incorrect or
+            duplicated and agree to delete its related records
+        </label>
+        <div class="form-bottom">
+            <a class="button" href="/animals/<%= animal._id %>/adoption">Cancel</a>
+            <button class="primary" type="submit">Confirm Deletion</button>
+        </div>
+    </form>
+</section>
+<%- include('footer') %>

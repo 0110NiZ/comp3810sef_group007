@@ -1,263 +1,216 @@
-
 <%- include('header') %>
 
 <div class="page-heading">
     <div>
         <span class="eyebrow">ANIMAL RECORDS</span>
-        <h1>动物档案</h1>
-        <p>按动物类型、发现地点、状态及登记日期查询动物档案</p>
+        <h1>Animal Records</h1>
+        <p>Find records by type, location, status and registration date.</p>
     </div>
-    <a class="button primary" href="/animals/new">＋ 新增动物</a>
+    <a class="button primary" href="/animals/new">＋ Add Animal</a>
 </div>
 
-<% if (typeof yPreview !== 'undefined' && yPreview) { %>
-<section class="panel" style="margin-bottom: 20px; padding: 14px 20px;">
-    <p class="muted">开发预览模式：当前使用示例动物数据，尚未连接 MongoDB。</p>
-</section>
-<% } %>
 
 <section class="panel">
 
     <form method="get" action="/animals" class="filters">
 
         <label>
-            动物类型
+            Animal Type
             <select name="animalType">
-                <option value="">全部类型</option>
+                <option value="">All Types</option>
                 <% Object.entries(labels.animalTypes).forEach(([value, label]) => { %>
-                    <option value="<%= value %>"
-                        <%= filters.animalType === value ? 'selected' : '' %>>
-                        <%= label %>
-                    </option>
+                <option value="<%= value %>" <%= filters.animalType === value ? 'selected' : '' %>>
+                    <%= label %>
+                </option>
                 <% }) %>
             </select>
         </label>
 
         <label>
-            发现地点
-            <input
-                type="text"
-                name="foundLocation"
-                placeholder="输入地点关键词"
-                maxlength="200"
-                value="<%= filters.foundLocation || '' %>"
-            >
+            Found Location
+            <input type="text" name="foundLocation" placeholder="Search locations" maxlength="200"
+                value="<%= filters.foundLocation || '' %>">
         </label>
 
         <label>
-            救助进度
+            Rescue Progress
             <select name="rescueStatus">
-                <option value="">全部进度</option>
+                <option value="">All Stages</option>
                 <% Object.entries(labels.rescueStatuses).forEach(([value, label]) => { %>
-                    <option value="<%= value %>"
-                        <%= filters.rescueStatus === value ? 'selected' : '' %>>
-                        <%= label %>
-                    </option>
+                <option value="<%= value %>" <%= filters.rescueStatus === value ? 'selected' : '' %>>
+                    <%= label %>
+                </option>
                 <% }) %>
             </select>
         </label>
 
         <label>
-            领养状态
+            Adoption Status
             <select name="adoptionStatus">
-                <option value="">全部状态</option>
+                <option value="">All Statuses</option>
                 <% Object.entries(labels.adoptionStatuses).forEach(([value, label]) => { %>
-                    <option value="<%= value %>"
-                        <%= filters.adoptionStatus === value ? 'selected' : '' %>>
-                        <%= label %>
-                    </option>
+                <option value="<%= value %>" <%= filters.adoptionStatus === value ? 'selected' : '' %>>
+                    <%= label %>
+                </option>
                 <% }) %>
             </select>
         </label>
 
 
-            <div class="y-date-range-field">
-                <label for="y-range-trigger">
-                    登记日期范围
-                </label>
+        <div class="y-date-range-field">
+            <label for="y-range-trigger">
+                Registration Date Range
+            </label>
 
-                <input
-                    type="hidden"
-                    name="dateFrom"
-                    id="y-date-from"
-                    value="<%= filters.dateFrom || '' %>"
-                >
+            <input type="hidden" name="dateFrom" id="y-date-from" value="<%= filters.dateFrom || '' %>">
 
-                <input
-                    type="hidden"
-                    name="dateTo"
-                    id="y-date-to"
-                    value="<%= filters.dateTo || '' %>"
-                >
+            <input type="hidden" name="dateTo" id="y-date-to" value="<%= filters.dateTo || '' %>">
 
-                <button
-                    type="button"
-                    id="y-range-trigger"
-                    class="y-range-trigger"
-                    aria-expanded="false"
-                    aria-controls="y-range-calendar"
-                >
-                    选择起止日期
-                </button>
+            <button type="button" id="y-range-trigger" class="y-range-trigger" aria-expanded="false"
+                aria-controls="y-range-calendar">
+                Select Date Range
+            </button>
 
-                <div
-                    id="y-range-calendar"
-                    class="y-range-calendar"
-                    hidden
-                >
-                    <div class="y-range-toolbar">
-                        <button
-                            type="button"
-                            id="y-prev-month"
-                            aria-label="上一个月"
-                        >
-                            ‹
-                        </button>
+            <div id="y-range-calendar" class="y-range-calendar" hidden>
+                <div class="y-range-toolbar">
+                    <button type="button" id="y-prev-month" aria-label="Previous Month">
+                        ‹
+                    </button>
 
-                        <strong id="y-month-title"></strong>
+                    <strong id="y-month-title">
+                    </strong>
 
-                        <button
-                            type="button"
-                            id="y-next-month"
-                            aria-label="下一个月"
-                        >
-                            ›
-                        </button>
-                    </div>
+                    <button type="button" id="y-next-month" aria-label="Next Month">
+                        ›
+                    </button>
+                </div>
 
-                    <div class="y-range-weekdays">
-                        <span>一</span>
-                        <span>二</span>
-                        <span>三</span>
-                        <span>四</span>
-                        <span>五</span>
-                        <span>六</span>
-                        <span>日</span>
-                    </div>
+                <div class="y-range-weekdays">
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                    <span>Sun</span>
+                </div>
 
-                    <div
-                        id="y-calendar-days"
-                        class="y-calendar-days"
-                    ></div>
+                <div id="y-calendar-days" class="y-calendar-days">
+                </div>
 
-                    <p id="y-range-hint">
-                        先选开始日期，再选结束日期
-                    </p>
+                <p id="y-range-hint">
+                    Choose the start date, then the end date
+                </p>
 
-                    <div class="y-range-actions">
-                        <button
-                            type="button"
-                            id="y-range-clear"
-                        >
-                            清除日期
-                        </button>
+                <div class="y-range-actions">
+                    <button type="button" id="y-range-clear">
+                        Clear Dates
+                    </button>
 
-                        <button
-                            type="button"
-                            id="y-range-done"
-                        >
-                            完成
-                        </button>
-                    </div>
+                    <button type="button" id="y-range-done">
+                        Done
+                    </button>
                 </div>
             </div>
+        </div>
 
         <label>
-            排序方式
+            Sort By
             <select name="sort">
                 <% Object.entries({
-                    updated_desc: '最近更新优先',
-                    updated_asc: '最早更新优先',
-                    created_desc: '最新登记优先',
-                    created_asc: '最早登记优先'
+                    updated_desc: 'Recently Updated',
+                    updated_asc: 'Oldest Update',
+                    created_desc: 'Newest Registration',
+                    created_asc: 'Oldest Registration'
                 }).forEach(([value, label]) => { %>
-                    <option value="<%= value %>"
-                        <%= filters.sort === value ? 'selected' : '' %>>
-                        <%= label %>
-                    </option>
+                <option value="<%= value %>" <%= filters.sort === value ? 'selected' : '' %>>
+                    <%= label %>
+                </option>
                 <% }) %>
             </select>
         </label>
 
         <div class="filter-actions">
-            <button class="primary" type="submit">查询</button>
-            <a class="button" href="/animals">重置</a>
+            <button class="primary" type="submit">Search</button>
+            <a class="button" href="/animals">Reset</a>
         </div>
 
     </form>
 
     <div class="section-heading">
-        <h2>查询结果</h2>
-        <span class="muted">共 <%= total %> 条记录</span>
+        <h2>Search Results</h2>
+        <span class="muted">Total <%= total %> records</span>
     </div>
 
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>编号 / 外观</th>
-                    <th>动物类型</th>
-                    <th>发现地点</th>
-                    <th>救助进度</th>
-                    <th>领养状态</th>
-                    <th>登记日期</th>
-                    <th>操作</th>
+                    <th>Code / Appearance</th>
+                    <th>Animal Type</th>
+                    <th>Found Location</th>
+                    <th>Rescue Progress</th>
+                    <th>Adoption Status</th>
+                    <th>Registered Date</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
 
             <tbody>
                 <% if (animals.length > 0) { %>
 
-                    <% animals.forEach(animal => { %>
-                        <tr>
-                            <td>
-                                <strong class="animal-id">
-                                    <span class="mini-animal" aria-hidden="true">
-                                        <%= animal.animalType === 'cat' ? '🐈' :
-                                            animal.animalType === 'dog' ? '🐕' : '🐾' %>
-                                    </span>
-                                    <%= animal.animalCode %>
-                                </strong>
-                                <p><%= animal.appearance %></p>
-                            </td>
+                <% animals.forEach(animal => { %>
+                <tr>
+                    <td>
+                        <strong class="animal-id">
+                            <span class="mini-animal animal-avatar-<%= animal.animalType %>"
+                                aria-hidden="true">
+                                <%- include('icon', { name: ['cat', 'dog'].includes(animal.animalType) ? animal.animalType : 'paw' }) %>
+                            </span>
+                            <%= animal.animalCode %>
+                        </strong>
+                        <p>
+                            <%= animal.appearance %>
+                        </p>
+                    </td>
 
-                            <td>
-                                <%= labels.animalTypes[animal.animalType] || '未知' %>
-                            </td>
+                    <td>
+                        <%= labels.animalTypes[animal.animalType] || 'Unknown' %>
+                    </td>
 
-                            <td>
-                                <%= animal.foundLocation %>
-                            </td>
+                    <td>
+                        <%= animal.foundLocation %>
+                    </td>
 
-                            <td>
-                                <span class="badge status-<%= animal.rescueStatus %>">
-                                    <%= labels.rescueStatuses[animal.rescueStatus] || '未知' %>
-                                </span>
-                            </td>
+                    <td>
+                        <span class="badge status-<%= animal.rescueStatus %>">
+                            <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
+                        </span>
+                    </td>
 
-                            <td>
-                                <span class="badge status-<%= animal.adoptionStatus %>">
-                                    <%= labels.adoptionStatuses[animal.adoptionStatus] || '未知' %>
-                                </span>
-                            </td>
+                    <td>
+                        <span class="badge status-<%= animal.adoptionStatus %>">
+                            <%= labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown' %>
+                        </span>
+                    </td>
 
-                            <td>
-                                <%= animal.createdAt ? formatDate(animal.createdAt) : '—' %>
-                            </td>
+                    <td>
+                        <%= animal.createdAt ? formatDate(animal.createdAt) : '—' %>
+                    </td>
 
-                            <td>
-                                <a href="/animals/<%= animal._id %>">查看详情</a>
-                            </td>
-                        </tr>
-                    <% }) %>
+                    <td>
+                        <a href="/animals/<%= animal._id %>">View Details</a>
+                    </td>
+                </tr>
+                <% }) %>
 
                 <% } else { %>
 
-                    <tr>
-                        <td colspan="7" class="empty">
-                            没有符合条件的动物记录，请调整筛选条件后重试。
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="7" class="empty">
+                        No animals match these filters. Try changing your search.
+                    </td>
+                </tr>
 
                 <% } %>
             </tbody>
@@ -266,31 +219,32 @@
 
     <div class="pagination">
         <span>
-            共 <%= total %> 条记录 · 每页 3 条
+            Total <%= total %> records · 3 per page
         </span>
 
         <div>
             <% if (page > 1) { %>
-                <a class="button" href="<%= pageUrl(page - 1) %>">
-                    上一页
-                </a>
+            <a class="button" href="<%= pageUrl(page - 1) %>">
+                Previous
+            </a>
             <% } else { %>
-                <button type="button" disabled>上一页</button>
+            <button type="button" disabled>Previous</button>
             <% } %>
 
-            <span>第 <%= page %> / <%= pageCount %> 页</span>
+            <span>Page <%= page %> / <%= pageCount %> </span>
 
             <% if (page < pageCount) { %>
-                <a class="button" href="<%= pageUrl(page + 1) %>">
-                    下一页
-                </a>
+            <a class="button" href="<%= pageUrl(page + 1) %>">
+                Next
+            </a>
             <% } else { %>
-                <button type="button" disabled>下一页</button>
+            <button type="button" disabled>Next</button>
             <% } %>
         </div>
     </div>
 
 </section>
 <link rel="stylesheet" href="/date_range.css">
-<script src="/date_range.js" defer></script>
+<script src="/date_range.js" defer>
+</script>
 <%- include('footer') %>

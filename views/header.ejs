@@ -1,173 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
 
-<!doctype html>
-<html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#176b52">
-
-    <title><%= title %> · 栖伴</title>
-
+    <title>
+        <%= title %> · Pawhaven</title>
     <link rel="stylesheet" href="/style.css">
-    <script src="/preview.js" defer></script>
+    <link rel="stylesheet" href="/icons.css">
+    <link rel="stylesheet" href="/workspace.css">
+    <script src="/app.js" defer>
+    </script>
 </head>
 
 <body>
-<div class="app-shell">
-
-    <aside class="sidebar">
-
-        <!-- 品牌区域：保持原样 -->
-        <a class="brand" href="/">
-            <span class="brand-mark" aria-hidden="true">爪</span>
-            <span>
-                栖伴
-                <small>动物救助与领养管理</small>
-            </span>
-        </a>
-
-        <div class="nav-caption">工作空间</div>
-
-        <!-- 原有业务导航：不修改其他组员的入口 -->
-        <nav aria-label="主导航">
-
-            <a
-                class="nav-item <%= activePage === 'home' ? 'active' : '' %>"
-                href="/"
-                <%- activePage === 'home' ? 'aria-current="page"' : '' %>
-            >
-                <span aria-hidden="true">◫</span>
-                首页统计
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="/">
+                <span class="brand-mark" aria-hidden="true"><%- include('icon', { name: 'paw' }) %></span>
+                <span>Pawhaven<small>RESCUE & ADOPTION</small>
+                </span>
             </a>
-
-            <a
-                class="nav-item <%= activePage === 'list' ? 'active' : '' %>"
-                href="/animals"
-                <%- activePage === 'list' ? 'aria-current="page"' : '' %>
-            >
-                <span aria-hidden="true">▤</span>
-                动物档案
-            </a>
-
-            <a
-                class="nav-item <%= activePage === 'create' ? 'active' : '' %>"
-                href="/animals/new"
-                <%- activePage === 'create' ? 'aria-current="page"' : '' %>
-            >
-                <span aria-hidden="true">＋</span>
-                新增动物
-            </a>
-
-            <div class="nav-caption">账号管理</div>
-
-            <a
-                class="nav-item <%= activePage === 'profile' ? 'active' : '' %>"
-                href="/profile"
-                <%- activePage === 'profile' ? 'aria-current="page"' : '' %>
-            >
-                <span aria-hidden="true">◎</span>
-                个人资料
-            </a>
-
-            <!-- T 模块：根据真实登录状态显示登录或退出 -->
-            <% if (currentUser) { %>
-
+            <div class="nav-caption">Workspace</div>
+            <nav aria-label="Main navigation">
+                <% const links = [['home', '/', 'Overview', 'overview'], ['list', '/animals', 'Animal Records', 'paw'], ['create', '/animals/new', 'Add Animal', 'plus']]; %>
+                <% links.forEach(([key, href, label, icon]) => { %>
+                <a class="nav-item <%= activePage === key ? 'active' : '' %>" href="<%= href %>"
+                    <%- activePage === key ? 'aria-current="page"' : '' %>>
+                    <span aria-hidden="true">
+                        <%- include('icon', { name: icon }) %>
+                    </span>
+                    <%= label %>
+                </a>
+                <% }); %>
+                <div class="nav-caption">Team & Account</div>
+                <% if (currentUser && currentUser.role === 'admin') { %>
+                <a class="nav-item <%= activePage === 'users' ? 'active' : '' %>" href="/users"
+                    <%- activePage === 'users' ? 'aria-current="page"' : '' %>>
+                    <span aria-hidden="true"><%- include('icon', { name: 'team' }) %></span>Team Accounts
+                </a>
+                <% } %>
+                <a class="nav-item <%= activePage === 'profile' ? 'active' : '' %>" href="/profile"
+                    <%- activePage === 'profile' ? 'aria-current="page"' : '' %>>
+                    <span aria-hidden="true"><%- include('icon', { name: 'user' }) %></span>My Account
+                </a>
+                <% if (currentUser) { %>
                 <form method="POST" action="/logout">
-                    <input
-                        type="hidden"
-                        name="_csrf"
-                        value="<%= csrfToken %>"
-                    >
-
-                    <button
-                        type="submit"
-                        class="nav-item"
-                        style="width:100%; border:0; background:transparent; text-align:left; font:inherit; cursor:pointer;"
-                    >
-                        <span aria-hidden="true">↗</span>
-                        退出登录
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="nav-item sign-out" type="submit">
+                        <span aria-hidden="true"><%- include('icon', { name: 'logout' }) %></span>Sign Out
                     </button>
                 </form>
-
-            <% } else { %>
-
-                <a class="nav-item" href="/login">
-                    <span aria-hidden="true">↗</span>
-                    工作人员登录
-                </a>
-
-            <% } %>
-
-        </nav>
-
-        <div class="sidebar-note">
-            <span class="tiny-dot"></span>
-            每一份记录，都是新的开始。
-        </div>
-
-    </aside>
-
-    <div class="workspace">
-
-        <!-- 顶部导航 -->
-        <header class="topbar">
-
-            <div>
-                <span class="eyebrow">RESCUE & ADOPTION</span>
-                <div class="topbar-title">
-                    流浪动物救助与领养管理系统
-                </div>
+                <% } %>
+            </nav>
+            <div class="sidebar-note">
+                <span class="tiny-dot">
+                </span>Every record. A new beginning.
             </div>
-
-            <!-- T 模块：显示 MongoDB 中的真实登录用户 -->
-            <% if (currentUser) { %>
-
-                <a href="/profile" class="user-chip">
-
-                    <span class="avatar">
-                        <%= Array.from(currentUser.displayName || currentUser.username || '?')[0] %>
+        </aside>
+        <div class="workspace">
+            <header class="topbar">
+                <div>
+                    <span class="eyebrow">PAWHAVEN WORKSPACE</span>
+                    <span class="topbar-title">
+                        <%= title %>
                     </span>
-
+                </div>
+                <% if (currentUser) { %>
+                <a href="/profile" class="user-chip">
+                    <span class="avatar">
+                        <%= (currentUser.displayName || currentUser.username).slice(0, 1).toUpperCase() %>
+                    </span>
                     <span>
-                        <%= currentUser.displayName || currentUser.username %>
-
+                        <%= currentUser.displayName %>
                         <small>
-                            <%= currentUser.role === 'admin'
-                                ? '管理员'
-                                : '工作人员' %>
+                            <%= currentUser.role === 'admin' ? 'Administrator' : 'Staff' %>
                         </small>
                     </span>
-
                 </a>
-
-            <% } else { %>
-
-                <a href="/login" class="user-chip">
-                    <span class="avatar">?</span>
-
-                    <span>
-                        未登录
-                        <small>点击登录</small>
-                    </span>
-                </a>
-
-            <% } %>
-
-        </header>
-
-        <main class="container">
-
-            <!-- 账号页面显示真实状态，其他业务原型保留原提示 -->
-            <div class="preview-strip">
-                <span class="tiny-dot"></span>
-
-                <% if (currentUser && activePage === 'profile') { %>
-                    账号信息已连接 MongoDB · 修改将保存
-                <% } else { %>
-                    示例数据 · 表单仅预览，不保存
                 <% } %>
-
-                <div class="strip-end">
-                    让救助有迹可循
-                </div>
-            </div>
+            </header>
+            <main class="container">
