@@ -423,7 +423,9 @@ app.get('/profile', requireLogin, async (req, res, next) => {
             });
         return profileView(res, profile, {
             editing: req.query.edit === '1',
-            success: req.query.updated === '1' ? 'Profile saved.' : ''
+            success: req.query.updated === 'password'
+                ? 'Password updated. Other sessions have been signed out.'
+                : req.query.updated === '1' ? 'Profile saved.' : ''
         });
     } catch (error) {
         return next(error);
@@ -637,7 +639,7 @@ async function updatePassword(req, res, next) {
                 message: 'Password updated. Other sessions are no longer valid.'
             });
         }
-        return res.redirect(303, '/password?updated=1');
+        return res.redirect(303, '/profile?updated=password');
     } catch (error) {
         return next(error);
     }
@@ -1736,7 +1738,12 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             ...req.session.workReturns,
             [area.key]: urlFor(tab, page)
         };
+        const notice = req.session.workNotice;
+        const showNotice = notice?.path === req.path && notice.tab === tab &&
+            rows.some(row => String(row._id) === notice.id);
+        if (showNotice) delete req.session.workNotice;
         return res.render('work-area', {
+            workNotice: showNotice ? notice : null,
             title: area.title,
             activePage: area.key,
             area,
@@ -2130,7 +2137,14 @@ function mExpectedVersion(value, timestamp) {
 
 app.post('/animals/:id/rescue', requireLogin, requireCsrf, async (req, res) => {
     try {
-        await mUpdateRescue(req);
+        const animal = await mUpdateRescue(req);
+        if (animal.rescueStatus === 'placed') {
+            return await redirectToWorkRecord(
+                req, res, '/rescue-management', 'placed', Animal,
+                { rescueStatus: 'placed', closedAt: null, adoptionStatus: { $ne: 'adopted' } },
+                animal, animal.animalCode + ' — placement saved.'
+            );
+        }
         return res.redirect(
             303,
             '/animals/' +
@@ -2244,7 +2258,14 @@ async function mCreateFollowUp(req) {
 
 app.post('/animals/:id/followups/new', requireLogin, requireCsrf, async (req, res) => {
     try {
-        await mCreateFollowUp(req);
+        const entry = await mCreateFollowUp(req);
+        const source = new URL(res.locals.backSource?.url || '/', 'http://localhost');
+        if (source.pathname === '/followup-records' && source.searchParams.get('tab') === 'new') {
+            return await redirectToWorkRecord(
+                req, res, '/followup-records', 'all', FollowUp, {},
+                entry, 'Follow-up saved.'
+            );
+        }
         return res.redirect(
             303,
             res.locals.backSource?.url || '/animals/' + req.params.id + '#care-journal'
@@ -3134,6 +3155,19 @@ async function nRender(req, res, view, error = null, status = 200) {
     });
 }
 
+async function redirectToWorkRecord(req, res, path, tab, model, filter, record, message) {
+    const preceding = await model.countDocuments({
+        ...filter,
+        $or: [
+            { createdAt: { $gt: record.createdAt } },
+            { createdAt: record.createdAt, _id: { $gt: record._id } }
+        ]
+    });
+    const page = Math.floor(preceding / 10) + 1;
+    req.session.workNotice = { path, tab, id: String(record._id), message };
+    return res.redirect(303, path + '?tab=' + tab + '&page=' + page + '#record-' + record._id);
+}
+
 function nRegisterRoutes(target) {
     target.get('/animals/:id/adoption/cancel', nRequireLogin, async (req, res) => {
         try {
@@ -3225,6 +3259,26 @@ function nRegisterRoutes(target) {
                     return res.redirect(
                         303,
                         '/animals/' + req.params.id + '/deletion-result'
+                    );
+                }
+                if (suffix !== 'close') {
+                    const tab = data.animal.adoptionStatus;
+                    const processing = tab === 'processing';
+                    const messages = {
+                        'adoption-status': tab === 'available'
+                            ? 'is now available for adoption.'
+                            : 'has been withdrawn from adoption.',
+                        adoption: '— adoption application registered.',
+                        'adoption/edit': '— adopter details updated.',
+                        'adoption/cancel': '— application cancelled. Available for adoption again.'
+                    };
+                    return await redirectToWorkRecord(
+                        req, res, '/adoption-management', tab,
+                        processing ? LAdoption : Animal,
+                        processing ? { cancelledAt: null, completedAt: null } :
+                            { adoptionStatus: tab, closedAt: null },
+                        processing ? data.adoption : data.animal,
+                        data.animal.animalCode + ' ' + messages[suffix]
                     );
                 }
                 const target =

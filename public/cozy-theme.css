@@ -1875,7 +1875,8 @@ button.danger,
 .record-actions h2 {
     margin: 0;
 }
-.record-actions .delete-record-button {
+.record-actions .delete-record-button,
+.button.cancel-adoption-button {
     background: #fff0ea;
     border-color: #af6954;
     color: #872f20;
@@ -1971,5 +1972,46 @@ body[data-page="home"] .topbar {
     .recent-entry > .recent-link {
         grid-column: 2 / -1;
         grid-row: auto;
+    }
+}
+
+@media (min-width: 851px) {
+    #case-summary > .panel,
+    .rescue-form-layout > .panel {
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #case-summary > .panel > .button,
+    .rescue-form-layout > .form-aside > .button {
+        align-self: flex-start;
+    }
+
+    #case-summary > .panel > dl,
+    .rescue-form-layout > .form-aside > .steps {
+        margin-bottom: 1rem;
+    }
+
+    #case-summary > .panel > .button,
+    #case-summary > .panel > .actions,
+    .rescue-form-layout > .form-aside > .button {
+        margin-top: auto;
+    }
+
+    .rescue-form-layout > .panel {
+        padding-bottom: 1.5rem;
+    }
+
+    .rescue-form-layout form,
+    .rescue-form-layout fieldset {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rescue-form-layout .form-grid {
+        flex: 1;
+        align-content: start;
     }
 }

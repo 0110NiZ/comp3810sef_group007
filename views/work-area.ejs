@@ -98,6 +98,9 @@
                 id="record-<%= row._id %>"
                 class="panel work-record <%= closed ? 'archived-record' : '' %>"
             >
+                <% if (workNotice?.id === String(row._id)) { %>
+                    <p class="form-feedback" role="status"><%= workNotice.message %></p>
+                <% } %>
                 <header class="work-record-heading">
                     <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
                     <div>

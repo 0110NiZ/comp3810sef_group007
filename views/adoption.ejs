@@ -100,9 +100,8 @@
             <div class="panel-note">
                 <p>Adopter withdrawing? Keep a record of the reason before starting
                     another adoption.</p>
-                <a class="text-link danger-text"
-                    href="/animals/<%= animal._id %>/adoption/cancel<%= returnQuery() %>">Cancel This
-                    Adoption →</a>
+                <a class="button cancel-adoption-button"
+                    href="/animals/<%= animal._id %>/adoption/cancel<%= returnQuery() %>">Cancel This Adoption</a>
             </div>
         <% } else if (adoption) { %>
             <dl>
