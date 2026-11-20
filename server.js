@@ -830,7 +830,7 @@ async function lUpdate(req, res, next) {
         lOpen(animal);
         const values = lInput(req.body, true);
         const supplied = req.body.expectedUpdatedAt;
-        if (supplied === undefined && !isApiRequest(req)) {
+        if (supplied === undefined) {
             throw lError(400, 'VALIDATION_ERROR', 'Missing record version. Reopen the edit page.');
         }
         if (supplied !== undefined && (typeof supplied !== 'string' ||
@@ -1583,55 +1583,65 @@ async function mHandleError(error, req, res) {
         );
     }
 
-    if (req.method === 'POST' && req.path.endsWith('/rescue') && [400, 409].includes(status)) {
-        const current = await mGetAnimal(req.params.id);
-        const users = await User.find({
-            isActive: {
-                $ne: false
+    const validAnimalId = /^[a-f0-9]{24}$/i.test(req.params.id || '');
+    try {
+        if (validAnimalId && req.method === 'POST' && req.path.endsWith('/rescue') && [400, 409].includes(status)) {
+            const current = await mGetAnimal(req.params.id);
+            const users = await User.find({
+                isActive: {
+                    $ne: false
+                }
+            }).select('_id displayName role').lean();
+            const animal = current.toObject();
+            for (const field of ['rescueStatus', 'assignedTo', 'placementLocation']) {
+                if (typeof req.body[field] === 'string') animal[field] = req.body[field].slice(0, 200);
             }
-        }).select('_id displayName role').lean();
-        const animal = current.toObject();
-        for (const field of ['rescueStatus', 'assignedTo', 'placementLocation']) {
-            if (typeof req.body[field] === 'string') animal[field] = req.body[field].slice(0, 200);
-        }
-        return res.status(status).render('rescue', {
-            title: 'Rescue Management',
-            activePage: 'list',
-            animal,
-            users,
-            error: message,
-            stale: status === 409 || /expectedUpdatedAt/.test(message),
-            expectedUpdatedAt: req.body.expectedUpdatedAt || current.updatedAt.toISOString()
-        });
-    }
-    const followRoute = req.path.match(/\/followups\/(new|[a-f0-9]{24}\/(edit|delete))$/i);
-    if (req.method === 'POST' && followRoute && [400, 409].includes(status)) {
-        const animal = await Animal.findById(req.params.id);
-        const mode = followRoute[1] === 'new' ? 'create' : followRoute[2];
-        const followUp = mode === 'create' ? null : await FollowUp.findOne({
-            _id: req.params.followId,
-            animalId: req.params.id
-        });
-        if (animal && !animal.closedAt && animal.adoptionStatus !== 'adopted' &&
-            (mode === 'create' || (followUp && mCanManageFollowUp(req, followUp)))) {
-            return res.status(status).render('followup', {
-                title: mode === 'create' ? 'Add Follow-up' : mode === 'edit' ?
-                    'Edit Follow-up' : 'Delete Follow-up',
+            return res.status(status).render('rescue', {
+                title: 'Rescue Management',
                 activePage: 'list',
                 animal,
-                mode,
-                followUp,
+                users,
                 error: message,
                 stale: status === 409 || /expectedUpdatedAt/.test(message),
-                draftContent: typeof req.body.content === 'string' ? req.body.content : '',
-                expectedUpdatedAt: typeof req.body.expectedUpdatedAt === 'string' ?
-                    req.body.expectedUpdatedAt : ''
+                expectedUpdatedAt: req.body.expectedUpdatedAt || current.updatedAt.toISOString()
             });
         }
+        const followRoute = req.path.match(/\/followups\/(new|[a-f0-9]{24}\/(edit|delete))$/i);
+        if (validAnimalId && req.method === 'POST' && followRoute && [400, 409].includes(status)) {
+            const animal = await mGetAnimal(req.params.id);
+            const mode = followRoute[1] === 'new' ? 'create' : followRoute[2];
+            const followUp = mode === 'create' ? null : await FollowUp.findOne({
+                _id: req.params.followId,
+                animalId: req.params.id
+            });
+            if (animal && !animal.closedAt && animal.adoptionStatus !== 'adopted' &&
+                (mode === 'create' || (followUp && mCanManageFollowUp(req, followUp)))) {
+                return res.status(status).render('followup', {
+                    title: mode === 'create' ? 'Add Follow-up' : mode === 'edit' ?
+                        'Edit Follow-up' : 'Delete Follow-up',
+                    activePage: 'list',
+                    animal,
+                    mode,
+                    followUp,
+                    error: message,
+                    stale: status === 409 || /expectedUpdatedAt/.test(message),
+                    draftContent: typeof req.body.content === 'string' ? req.body.content : '',
+                    expectedUpdatedAt: typeof req.body.expectedUpdatedAt === 'string' ?
+                        req.body.expectedUpdatedAt : ''
+                });
+            }
+        }
+    } catch (recoveryError) {
+        // Recovery must not turn a bad request or a deleted record into a server error.
+        status = recoveryError.mStatus || recoveryError.nStatus ||
+            (recoveryError.name === 'CastError' ? 400 : 500);
+        message = status === 500 ? 'The server could not process this request.' :
+            recoveryError.name === 'CastError' ? 'Invalid record ID.' : recoveryError.message;
+        if (status === 500) console.error('M form recovery error:', recoveryError);
     }
     return res.status(status).render('info', {
-        returnUrl: /^[a-f0-9]{24}$/i.test(req.params.id || '') ? '/animals/' + req.params.id :
-            '/animals',
+        returnUrl: validAnimalId && status !== 404 ? '/animals/' + req.params.id :
+            req.path.includes('/followups') ? '/followup-records' : '/rescue-management',
         title: 'Action Failed',
         activePage: 'list',
         message

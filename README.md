@@ -104,7 +104,7 @@ Follow-up list/create/edit now use this same envelope.
 | PUT | /api/animals/:id/adoption/cancel | Cancel adoption |
 | PUT | /api/animals/:id/close | Complete adoption and close |
 
-Animal editing accepts six basic fields and expectedUpdatedAt. Rescue and follow-up edit/delete
+Animal editing accepts six basic fields. Animal, rescue and follow-up edit/delete
 REQUIRE expectedUpdatedAt from the latest record; stale versions return 409 and missing/invalid
 versions return 400. Adoption edit/cancel/close require adoptionId and adoptionVersion from the
 latest GET adoption result. Do not generate these values yourself. Opening adoption requires
@@ -180,3 +180,19 @@ For isolated local counter and migration tests (replica set on port 27018):
 ```sh
 NODE_ENV=test node test-animal-codes.js
 ```
+
+## Third-party visual assets
+
+The pixel artwork is sourced from third-party creators, not presented as artwork
+made by group members. Kenney Tiny Town supplies the scenery, Kenney Pixel UI Pack
+supplies panel borders (both CC0), bluecarrot16 supplies the cats and dogs (CC BY
+3.0), and Gerrit Halfmann's Pixelarticons supplies interface icons (MIT).
+
+See [the asset attribution register](public/assets/README.md) for original links,
+selected licenses, modifications and the included license files. Artwork is served
+locally. SVG wrappers arrange existing assets; they do not claim original artwork.
+
+The `services/animal-codes.js` module provides sequential display codes; the
+`scripts/migrate-animal-codes.js` utility migrates legacy codes. MongoDB `_id`
+references stay unchanged. The Atlas `one_current_adoption` partial unique index
+allows at most one non-cancelled adoption per animal, including completed adoptions.

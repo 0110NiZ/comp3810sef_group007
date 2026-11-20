@@ -638,7 +638,8 @@ button:not(:disabled):active,
 
 .work-search label {
     flex: 1;
-    max-width: 520px;
+    max-width: none;
+    min-width: 0;
 }
 
 .work-search .muted {
@@ -1224,3 +1225,27 @@ button.danger,
 }
 
 .rescue-form-layout .form-aside { background: #e5eff6; }
+
+/* Search fills the available row; actions and count stay together. */
+.work-search {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto auto auto;
+    align-items: end;
+}
+.work-search .muted {
+    margin-left: 0;
+    white-space: nowrap;
+    padding: 0 0 12px 4px;
+}
+@media (max-width: 800px) {
+    .work-search { grid-template-columns: 1fr auto; }
+    .work-search label { grid-column: 1 / -1; }
+    .work-search .muted { grid-column: 1 / -1; padding: 0; }
+}
+
+/* Kenney Pixel UI Pack (CC0): use its nine-slice frame without filling the panel. */
+.panel, .metric, .welcome-banner, .pixel-quick {
+    border: 6px solid transparent;
+    border-image: url('/assets/vendor/kenney-ui/panel.png') 6 / 6px / 0 stretch;
+}
+.pixel-icon { color: currentColor; image-rendering: pixelated; }

@@ -133,6 +133,24 @@ async function main() {
             api = '/api/animals/' + id,
             web = '/animals/' + id;
         let animal = created.json.data;
+        for (const version of [undefined, 'not-a-date', null]) {
+            const payload = { ...fields, appearance: 'Must not be saved' };
+            if (version !== undefined) payload.expectedUpdatedAt = version;
+            assert.equal((await worker('PUT', api, payload)).status, 400);
+            assert.equal((await Animal.findById(id)).appearance, fields.appearance);
+        }
+        pass('Animal API rejects missing or malformed versions without changing data');
+        for (const suffix of ['/rescue', '/followups/new',
+            '/followups/000000000000000000000001/edit']) {
+            const invalidId = await worker('POST', '/animals/not-an-id' + suffix,
+                { content: 'Draft', rescueStatus: 'placed' }, { form: true });
+            assert.equal(invalidId.status, 400);
+            assert.ok(invalidId.text.includes('Invalid'));
+            const missing = await worker('POST', '/animals/000000000000000000000001' + suffix,
+                { content: 'Draft', rescueStatus: 'placed' }, { form: true });
+            assert.equal(missing.status, 404);
+        }
+        pass('Rescue and follow-up web errors safely return 400/404');
         const edited = await worker('PUT', api, {
             ...fields,
             appearance: 'Milo, recovering well',
@@ -156,6 +174,27 @@ async function main() {
         assert.equal(invalid.status, 400);
         assert.ok(invalid.text.includes('name="placementLocation"'));
         assert.ok(invalid.text.includes('Enter a placement location'));
+        const originalFindById = Animal.findById;
+        let recoveryReads = 0;
+        Animal.findById = function (...args) {
+            recoveryReads += 1;
+            return recoveryReads === 1 ? Promise.resolve(null) :
+                originalFindById.apply(this, args);
+        };
+        try {
+            const vanished = await worker('POST', web + '/rescue', {
+                rescueStatus: 'placed',
+                assignedTo: String(staff._id),
+                placementLocation: '',
+                expectedUpdatedAt: animal.updatedAt
+            }, { form: true });
+            assert.equal(vanished.status, 404);
+            assert.ok(vanished.text.includes('Animal record not found'));
+            assert.ok(vanished.text.includes('href="/rescue-management"'));
+        } finally {
+            Animal.findById = originalFindById;
+        }
+        pass('A record disappearing during error recovery returns 404 instead of 500');
         const rescue = {
             rescueStatus: 'placed',
             assignedTo: String(staff._id),

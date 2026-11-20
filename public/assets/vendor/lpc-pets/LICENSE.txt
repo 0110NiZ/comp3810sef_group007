@@ -1,0 +1,5 @@
+"[LPC] Cats and Dogs" by bluecarrot16
+Source: https://opengameart.org/content/lpc-cats-and-dogs
+Selected license: Creative Commons Attribution 3.0 Unported
+https://creativecommons.org/licenses/by/3.0/
+Original sprite sheets are unchanged. Static frames are selected and scaled in SVG wrappers.
