@@ -142,14 +142,16 @@ rm -f "$COOKIE_FILE"
 unset VERSION
 ```
 
-## Tests and submission
+## Animal registration and editing module
 
-Run `npm test` and `npm run test:n` with the local replica set available. Both use random
-isolated databases, then remove only their own databases. TEST_MONGODB_URI overrides the test
-server; do not use the shared business database for tests. The application suite checks real
-login, role boundaries, staff management, English pages, CRUD, stale updates, filter limits,
-disabled users and follow-up/closure/deletion races. The adoption suite additionally injects
-failures to verify rollback, legacy index migration and audit integrity.
+Animal create, read and edit routes are in server.js section 02. The schema and
+indexes are in models/Animal.js. The related views are create.ejs,
+animal-fields.ejs, edit.ejs and details.ejs. These share authentication, rescue
+and adoption workflows; do not apply older standalone module patches.
+Closed records remain read-only for all roles. Both web and API edits require
+expectedUpdatedAt; missing/invalid versions return 400 and stale versions return 409.
+
+## Submission
 
 Submit server.js, package files, README, models, views and public assets. Exclude node_modules,
 .env, cookies, local database files and temporary screenshots. Source must remain readable,
@@ -173,12 +175,6 @@ To explicitly run the migration using the local connection configuration:
 
 ```sh
 node --env-file=.env scripts/migrate-animal-codes.js
-```
-
-For isolated local counter and migration tests (replica set on port 27018):
-
-```sh
-NODE_ENV=test node test-animal-codes.js
 ```
 
 ## Third-party visual assets

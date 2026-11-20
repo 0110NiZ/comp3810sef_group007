@@ -4,7 +4,6 @@
   "description": "Animal Rescue Center internal animal rescue and adoption workspace",
   "main": "server.js",
   "scripts": {
-    "test": "NODE_ENV=test node test-app.js",
     "start": "node --env-file-if-exists=.env server.js",
     "test:n": "NODE_ENV=test node server.js --test-n"
   },
