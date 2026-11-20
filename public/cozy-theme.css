@@ -2015,3 +2015,334 @@ body[data-page="home"] .topbar {
         align-content: start;
     }
 }
+
+
+/* Personal work shortcuts and the matching pixel account avatar. */
+.profile-heading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.profile-heading h2 {
+    margin: 0;
+}
+
+.profile-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 12px;
+    image-rendering: pixelated;
+}
+
+.profile-avatar .pixel-icon {
+    width: 2rem;
+    height: 2rem;
+    shape-rendering: crispEdges;
+}
+
+.user-chip .avatar.profile-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+}
+
+.user-chip .avatar.profile-avatar .pixel-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.my-work {
+    max-width: 56rem;
+    margin-top: 1.25rem;
+}
+
+.my-work-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.my-work-link {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .85rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 2px solid #ddcfb8;
+    background: #fffaf0;
+    box-shadow: 3px 3px #d9ccb0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.my-work-link:hover,
+.my-work-link:focus-visible {
+    background: #f2f6dc;
+    text-decoration: none;
+}
+
+.my-work-link > span:nth-child(2) > * {
+    display: block;
+}
+
+.my-work-link strong {
+    color: #453b30;
+    font-size: 1rem;
+}
+
+.my-work-link > span:nth-child(2) > span {
+    margin-top: .25rem;
+    color: #746957;
+}
+
+.my-work-count {
+    min-width: 2rem;
+    padding: .35rem .55rem;
+    border: 1px solid #d4dfaa;
+    background: #eef3d8;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* Rescue case cards use one aligned row without touching the search panel. */
+.rescue-case {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(15rem, 1.1fr) minmax(15rem, .9fr) auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
+}
+
+.rescue-case .work-record-heading {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    align-items: center;
+    min-width: 0;
+    gap: .8rem;
+    margin: 0;
+    padding: 0 1rem 0 0;
+    border: 0;
+    border-right: 1px solid #ddcfb8;
+}
+
+.rescue-case .work-record-heading h2 {
+    font-size: 1rem;
+}
+
+.rescue-case .work-facts {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: max-content minmax(0, 1fr);
+    padding: .2rem 1rem;
+    border-right: 1px solid #ddcfb8;
+}
+
+.rescue-case .work-record-actions {
+    grid-column: 3;
+    grid-row: 1;
+    padding: 0;
+    gap: .6rem;
+}
+
+.rescue-case .work-record-actions .text-link {
+    display: none;
+}
+
+.rescue-case > .form-feedback {
+    grid-column: 1 / -1;
+}
+
+/* Follow-up notes read as journal entries, with their status clearly visible. */
+.followup-entry {
+    position: relative;
+    grid-column: 1 / -1;
+    padding: 1.4rem 1.6rem;
+    border-radius: 12px;
+}
+
+.followup-entry .work-record-heading {
+    align-items: center;
+    padding-bottom: .9rem;
+    margin-bottom: .8rem;
+}
+
+.followup-entry .work-record-heading h2 {
+    font-size: .95rem;
+    color: #746957;
+}
+
+.followup-entry .work-record-heading .badge {
+    display: none;
+}
+
+.followup-entry .archive-label {
+    position: absolute;
+    top: 1.4rem;
+    right: 1.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .4rem .65rem;
+    border: 1px solid #d4dfaa;
+    background: #eef3d8;
+    color: #4f6b43;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.followup-entry .journal-meta {
+    margin: 0;
+    color: #746957;
+    font-size: .95rem;
+}
+
+.followup-entry .journal-content {
+    padding: 1rem 1.1rem;
+    border-left: 4px solid #d6bd82;
+    background: #fff5df;
+    color: #453b30;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.followup-entry .work-record-actions {
+    justify-content: flex-start;
+    padding-top: .5rem;
+}
+
+.followup-entry .work-record-actions .text-link {
+    display: inline-flex;
+}
+
+/* The available adoption tab has a centered, animal-focused empty state. */
+.adoption-empty {
+    min-height: 27rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border-radius: 12px;
+}
+
+.adoption-empty > .heading-icon {
+    display: none;
+}
+
+.adoption-empty-art {
+    position: relative;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 1.25rem;
+    width: 12rem;
+    height: 8rem;
+    margin-bottom: .75rem;
+}
+
+.adoption-empty-art .pixel-icon {
+    shape-rendering: crispEdges;
+    image-rendering: pixelated;
+}
+
+.adoption-empty-heart {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    color: #64845b;
+    transform: translateX(-50%);
+}
+
+.adoption-empty-heart .pixel-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.adoption-empty-cat .pixel-icon,
+.adoption-empty-dog .pixel-icon {
+    width: 4.4rem;
+    height: 4.4rem;
+    padding: .35rem;
+    border: 2px solid #ddcfb8;
+    background: #fff4d9;
+}
+
+.adoption-empty h2 {
+    margin: .5rem 0;
+}
+
+@media (max-width: 1100px) {
+    .rescue-case {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .rescue-case .work-record-heading {
+        grid-column: 1 / -1;
+        border-right: 0;
+        padding: 0 0 .8rem;
+        border-bottom: 1px solid #ddcfb8;
+    }
+
+    .rescue-case .work-facts {
+        grid-column: 1;
+        grid-row: 2;
+        border-right: 0;
+        padding: 0;
+    }
+
+    .rescue-case .work-record-actions {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 650px) {
+    .my-work-links {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rescue-case {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rescue-case .work-record-heading,
+    .rescue-case .work-facts,
+    .rescue-case .work-record-actions {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .rescue-case .work-record-heading {
+        grid-template-columns: 3rem minmax(0, 1fr);
+    }
+
+    .rescue-case .work-record-heading .badge {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .followup-entry {
+        padding: 1rem;
+    }
+
+    .followup-entry .work-record-heading {
+        flex-direction: row;
+    }
+
+    .followup-entry .archive-label {
+        font-size: .8rem;
+    }
+
+    .adoption-empty {
+        min-height: 22rem;
+        padding: 1.25rem;
+    }
+}

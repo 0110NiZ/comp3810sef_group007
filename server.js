@@ -408,7 +408,11 @@ function profileView(res, profile, options = {}) {
         profile,
         editing: Boolean(options.editing || options.error),
         error: options.error || '',
-        success: options.success || ''
+        success: options.success || '',
+        workCounts: options.workCounts || {
+            assignedAnimalCount: 0,
+            followUpCount: 0
+        }
     });
 }
 
@@ -421,11 +425,20 @@ app.get('/profile', requireLogin, async (req, res, next) => {
                 activePage: '',
                 message: 'Account not found. Please sign in again.'
             });
+        const [assignedAnimalCount, followUpCount] = await Promise.all([
+            Animal.countDocuments({
+                assignedTo: req.user._id,
+                closedAt: null,
+                adoptionStatus: { $ne: 'adopted' }
+            }),
+            FollowUp.countDocuments({ recordedBy: req.user._id })
+        ]);
         return profileView(res, profile, {
             editing: req.query.edit === '1',
             success: req.query.updated === 'password'
                 ? 'Password updated. Other sessions have been signed out.'
-                : req.query.updated === '1' ? 'Profile saved.' : ''
+                : req.query.updated === '1' ? 'Profile saved.' : '',
+            workCounts: { assignedAnimalCount, followUpCount }
         });
     } catch (error) {
         return next(error);
@@ -1666,6 +1679,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
               }
             : {};
         const open = { closedAt: null, adoptionStatus: { $ne: 'adopted' } };
+        const assignedToMe = area.key === 'rescue' && req.query.assignedTo === 'me';
         let model = Animal;
         let where = animalSearch;
         const animalRows =
@@ -1687,6 +1701,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
                 ]
             };
             if (['pending', 'rescuing', 'placed'].includes(tab)) where.rescueStatus = tab;
+            if (assignedToMe) where.assignedTo = req.user._id;
         } else if (animalRows) {
             where = { ...animalSearch, ...open };
             if (area.key === 'adoption') where.adoptionStatus = tab;
@@ -1732,7 +1747,8 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             new URLSearchParams({
                 tab: nextTab,
                 q,
-                page: String(nextPage)
+                page: String(nextPage),
+                ...(assignedToMe ? { assignedTo: 'me' } : {})
             }).toString();
         req.session.workReturns = {
             ...req.session.workReturns,
@@ -1755,6 +1771,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             page,
             pageCount,
             urlFor,
+            assignedToMe,
             basePath: req.path
         });
     } catch (error) {

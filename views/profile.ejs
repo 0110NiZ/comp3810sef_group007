@@ -31,11 +31,16 @@
             </div>
         </form>
     <% } else { %>
-        <div class="section-heading">
-            <h2><%= profile.displayName %></h2>
-            <% if (success) { %>
-                <span role="status"><%= success %></span>
-            <% } %>
+        <div class="section-heading profile-heading">
+            <span class="profile-avatar" aria-hidden="true">
+                <%- include('icon', { name: 'user' }) %>
+            </span>
+            <div>
+                <h2><%= profile.displayName %></h2>
+                <% if (success) { %>
+                    <span role="status"><%= success %></span>
+                <% } %>
+            </div>
         </div>
         <dl class="employee-fields">
             <div>
@@ -57,5 +62,31 @@
         </div>
     <% } %>
 </section>
+
+<% if (!editing) { %>
+    <section class="panel my-work" aria-labelledby="my-work-title">
+        <h2 class="icon-heading" id="my-work-title">
+            <%- include('icon', { name: 'notes' }) %>My Work
+        </h2>
+        <div class="my-work-links">
+            <a class="my-work-link" href="/rescue-management?assignedTo=me">
+                <span class="heading-icon"><%- include('icon', { name: 'care' }) %></span>
+                <span>
+                    <strong>Assigned to Me</strong>
+                    <span>Open rescue cases I am responsible for</span>
+                </span>
+                <span class="my-work-count"><%= workCounts.assignedAnimalCount %></span>
+            </a>
+            <a class="my-work-link" href="/followup-records?tab=mine">
+                <span class="heading-icon"><%- include('icon', { name: 'notes' }) %></span>
+                <span>
+                    <strong>My Follow-ups</strong>
+                    <span>Follow-up notes I have recorded</span>
+                </span>
+                <span class="my-work-count"><%= workCounts.followUpCount %></span>
+            </a>
+        </div>
+    </section>
+<% } %>
 
 <%- include('footer') %>

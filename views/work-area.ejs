@@ -30,6 +30,9 @@
 
     <form class="panel work-search" method="get" action="<%= basePath %>">
         <input type="hidden" name="tab" value="<%= tab %>">
+        <% if (assignedToMe) { %>
+            <input type="hidden" name="assignedTo" value="me">
+        <% } %>
         <label>Find an Animal
             <input name="q" maxlength="100" value="<%= q %>"
                 placeholder="Animal code or description">
@@ -43,7 +46,14 @@
         <span class="muted"><%= total %> <%= animalRows ? 'animals' : 'records' %></span>
     </form>
     <% if (!rows.length) { %>
-        <section class="panel work-empty">
+        <section class="panel work-empty <%= area.key === 'adoption' && tab === 'available' ? 'adoption-empty' : '' %>">
+            <% if (area.key === 'adoption' && tab === 'available') { %>
+                <div class="adoption-empty-art" aria-hidden="true">
+                    <span class="adoption-empty-heart"><%- include('icon', { name: 'heart' }) %></span>
+                    <span class="adoption-empty-cat"><%- include('icon', { name: 'cat' }) %></span>
+                    <span class="adoption-empty-dog"><%- include('icon', { name: 'dog' }) %></span>
+                </div>
+            <% } %>
             <span class="heading-icon"><%-
                 include('icon', {
                     name:
@@ -64,12 +74,18 @@
             <p><%=
                 q
                     ? 'Try another animal code or description.'
-                    : 'Records will appear here when they reach this stage.'
+                    : area.key === 'adoption' && tab === 'available'
+                        ? 'Animals appear here after placement and health confirmation.'
+                        : 'Records will appear here when they reach this stage.'
             %></p>
             <% if (area.key === 'rescue') { %>
                 <a class="button" href="<%= urlFor('archived') %>">View Archived Cases</a>
+                <a class="button" href="/animals">Browse Animal Records</a>
+            <% } else if (area.key === 'adoption' && tab === 'available') { %>
+                <a class="button" href="<%= urlFor('not_open') %>">View not-open cases</a>
+            <% } else { %>
+                <a class="button" href="/animals">Browse Animal Records</a>
             <% } %>
-            <a class="button" href="/animals">Browse Animal Records</a>
         </section>
     <% } %>
     <div class="work-records <%= area.key === 'followups' && !animalRows ? 'journal-feed' : '' %>">
@@ -93,10 +109,16 @@
                     (currentUser.role === 'admin' ||
                         String(row.recordedBy?._id || row.recordedBy) ===
                             String(currentUser._id));
+                const recordType =
+                    area.key === 'rescue'
+                        ? 'rescue-case'
+                        : area.key === 'followups' && !animalRows
+                            ? 'followup-entry'
+                            : '';
         %>
             <article
                 id="record-<%= row._id %>"
-                class="panel work-record <%= closed ? 'archived-record' : '' %>"
+                class="panel work-record <%= closed ? 'archived-record' : '' %> <%= recordType %>"
             >
                 <% if (workNotice?.id === String(row._id)) { %>
                     <p class="form-feedback" role="status"><%= workNotice.message %></p>
