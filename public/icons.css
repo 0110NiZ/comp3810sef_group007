@@ -13,7 +13,7 @@
     stroke-width: 1.8;
 }
 
-.nav-item>span {
+.nav-item > span {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -138,7 +138,7 @@
     min-height: 204px;
 }
 
-.welcome-banner>div:first-child {
+.welcome-banner > div:first-child {
     flex: 1;
     max-width: 610px;
 }

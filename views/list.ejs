@@ -1,98 +1,106 @@
 <%- include('header') %>
-<% const mode = typeof workspaceMode === 'string' ? workspaceMode : 'list';
-const basePath = typeof listPath === 'string' ? listPath : '/animals';
-const workspaceCopy = {
-    list: ['Animal Records', 'Find records by type, location, status and registration date.'],
-    rescue: ['Rescue Management', 'Select an animal to manage rescue progress, staff assignment and placement.'],
-    followups: ['Follow-up Records', 'Select an animal to read its care journal or add a follow-up.'],
-    adoption: ['Adoption Management', 'Select an animal to manage availability, registration and adoption progress.']
-}[mode]; %>
+
+<%
+    const mode =
+        typeof workspaceMode === 'string' ? workspaceMode : 'list';
+    const basePath =
+        typeof listPath === 'string' ? listPath : '/animals';
+    const workspaceCopy = {
+        list: [
+            'Animal Records',
+            'Find records by type, location, status and registration date.'
+        ],
+        rescue: [
+            'Rescue Management',
+            'Select an animal to manage rescue progress, staff assignment and placement.'
+        ],
+        followups: [
+            'Follow-up Records',
+            'Select an animal to read its care journal or add a follow-up.'
+        ],
+        adoption: [
+            'Adoption Management',
+            'Select an animal to manage availability, registration and adoption progress.'
+        ]
+    }[mode];
+%>
 
 <div class="page-heading">
     <div>
-        <span class="eyebrow">ANIMAL RECORDS</span>
-        <h1 class="pixel-page-title"><%- include('icon', { name: 'notes' }) %><%= workspaceCopy[0] %></h1>
-        <p><%= workspaceCopy[1] %></p>
+        <h1 class="pixel-page-title">
+            <%- include('icon', { name: 'notes' }) %><%= workspaceCopy[0] %>
+        </h1>
     </div>
     <a class="button primary" href="/animals/new">＋ Add Animal</a>
 </div>
 
-
 <section class="panel">
-
-    <form method="get" action="<%= basePath %>" class="filters">
-
-        <label>
-            Animal Type
-            <select name="animalType">
+    <form method="get" action="<%= basePath %>" class="filters record-filters">
+        <label>Animal Code
+            <input type="search" name="animalCode" value="<%= filters.animalCode || '' %>"
+                placeholder="AR-2026-0001" maxlength="64">
+        </label>
+        <label> Animal Type <select name="animalType">
                 <option value="">All Types</option>
                 <% Object.entries(labels.animalTypes).forEach(([value, label]) => { %>
-                <option value="<%= value %>" <%= filters.animalType === value ? 'selected' : '' %>>
-                    <%= label %>
-                </option>
+                    <option
+                        value="<%= value %>"
+                        <%= filters.animalType === value ? 'selected' : '' %>
+                    > <%= label %> </option>
                 <% }) %>
             </select>
         </label>
-
-        <label>
-            Found Location
-            <input type="text" name="foundLocation" placeholder="Search locations" maxlength="200"
-                value="<%= filters.foundLocation || '' %>">
+        <label> Found Location
+            <input type="text" name="foundLocation" placeholder="Search locations"
+                maxlength="200" value="<%= filters.foundLocation || '' %>">
         </label>
-
-        <label>
-            Rescue Progress
-            <select name="rescueStatus">
+        <label> Rescue Progress <select name="rescueStatus">
                 <option value="">All Stages</option>
-                <% Object.entries(labels.rescueStatuses).forEach(([value, label]) => { %>
-                <option value="<%= value %>" <%= filters.rescueStatus === value ? 'selected' : '' %>>
-                    <%= label %>
-                </option>
+                <%
+                    Object.entries(labels.rescueStatuses).forEach(
+                        ([value, label]) => {
+                %>
+                    <option
+                        value="<%= value %>"
+                        <%= filters.rescueStatus === value ? 'selected' : '' %>
+                    > <%= label %> </option>
                 <% }) %>
             </select>
         </label>
-
-        <label>
-            Adoption Status
-            <select name="adoptionStatus">
+        <label> Adoption Status <select name="adoptionStatus">
                 <option value="">All Statuses</option>
-                <% Object.entries(labels.adoptionStatuses).forEach(([value, label]) => { %>
-                <option value="<%= value %>" <%= filters.adoptionStatus === value ? 'selected' : '' %>>
-                    <%= label %>
-                </option>
+                <%
+                    Object.entries(labels.adoptionStatuses).forEach(
+                        ([value, label]) => {
+                %>
+                    <option
+                        value="<%= value %>"
+                        <%= filters.adoptionStatus === value ? 'selected' : '' %>
+                    > <%= label %> </option>
                 <% }) %>
             </select>
         </label>
-
-
         <div class="y-date-range-field">
-            <label for="y-range-trigger">
-                Registration Date Range
-            </label>
-
-            <input type="hidden" name="dateFrom" id="y-date-from" value="<%= filters.dateFrom || '' %>">
-
+            <label for="y-range-trigger"> Registration Date Range </label>
+            <input
+                type="hidden"
+                name="dateFrom"
+                id="y-date-from"
+                value="<%= filters.dateFrom || '' %>"
+            >
             <input type="hidden" name="dateTo" id="y-date-to" value="<%= filters.dateTo || '' %>">
-
-            <button type="button" id="y-range-trigger" class="y-range-trigger" aria-expanded="false"
-                aria-controls="y-range-calendar">
-                Select Date Range
+            <button type="button" id="y-range-trigger" class="y-range-trigger"
+                aria-expanded="false" aria-controls="y-range-calendar"> Select Date Range
             </button>
-
             <div id="y-range-calendar" class="y-range-calendar" hidden>
                 <div class="y-range-toolbar">
-                    <button type="button" id="y-prev-month" aria-label="Previous Month">
-                        ‹
+                    <button type="button" id="y-prev-month" aria-label="Previous Month"> ‹
                     </button>
-
                     <strong id="y-month-title">
                     </strong>
-
-                    <button type="button" id="y-next-month" aria-label="Next Month">
-                        ›
+                    <button type="button" id="y-next-month" aria-label="Next Month"> ›
                     </button>
                 </div>
-
                 <div class="y-range-weekdays">
                     <span>Mon</span>
                     <span>Tue</span>
@@ -102,54 +110,44 @@ const workspaceCopy = {
                     <span>Sat</span>
                     <span>Sun</span>
                 </div>
-
                 <div id="y-calendar-days" class="y-calendar-days">
                 </div>
-
-                <p id="y-range-hint">
-                    Choose the start date, then the end date
-                </p>
-
+                <p id="y-range-hint"> Choose the start date, then the end date </p>
                 <div class="y-range-actions">
-                    <button type="button" id="y-range-clear">
-                        Clear Dates
-                    </button>
-
-                    <button type="button" id="y-range-done">
-                        Done
-                    </button>
+                    <button type="button" id="y-range-clear"> Clear Dates </button>
+                    <button type="button" id="y-range-done"> Done </button>
                 </div>
             </div>
         </div>
-
-        <label>
-            Sort By
-            <select name="sort">
-                <% Object.entries({
-                    updated_desc: 'Recently Updated',
-                    updated_asc: 'Oldest Update',
-                    created_desc: 'Newest Registration',
-                    created_asc: 'Oldest Registration'
-                }).forEach(([value, label]) => { %>
-                <option value="<%= value %>" <%= filters.sort === value ? 'selected' : '' %>>
-                    <%= label %>
-                </option>
+        <label> Sort By <select name="sort">
+                <%
+                    Object.entries({
+                        updated_desc: 'Recently Updated',
+                        updated_asc: 'Oldest Update',
+                        created_desc: 'Newest Registration',
+                        created_asc: 'Oldest Registration'
+                    }).forEach(([value, label]) => {
+                %>
+                    <option
+                        value="<%= value %>"
+                        <%= filters.sort === value ? 'selected' : '' %>
+                    > <%= label %> </option>
                 <% }) %>
             </select>
         </label>
-
         <div class="filter-actions">
-            <button class="primary" type="submit"><%- include('icon', { name: 'search' }) %> Search</button>
-            <a class="button" href="<%= basePath %>"><%- include('icon', { name: 'refresh' }) %> Reset</a>
+            <button class="primary" type="submit">
+                <%- include('icon', { name: 'search' }) %> Search
+            </button>
+            <a class="button" href="<%= basePath %>">
+                <%- include('icon', { name: 'refresh' }) %> Reset
+            </a>
         </div>
-
     </form>
-
     <div class="section-heading">
         <h2>Search Results</h2>
         <span class="muted">Total <%= total %> records</span>
     </div>
-
     <div class="table-wrap">
         <table>
             <thead>
@@ -163,108 +161,100 @@ const workspaceCopy = {
                     <th>Actions</th>
                 </tr>
             </thead>
-
             <tbody>
                 <% if (animals.length > 0) { %>
-
-                <% animals.forEach(animal => { %>
-                <tr>
-                    <td>
-                        <strong class="animal-id">
-                            <span class="mini-animal animal-avatar-<%= animal.animalType %>"
-                                aria-hidden="true">
-                                <%- include('icon', { name: ['cat', 'dog'].includes(animal.animalType) ? animal.animalType : 'paw' }) %>
-                            </span>
-                            <%= animal.animalCode %>
-                        </strong>
-                        <p>
-                            <%= animal.appearance %>
-                        </p>
-                    </td>
-
-                    <td>
-                        <%= labels.animalTypes[animal.animalType] || 'Unknown' %>
-                    </td>
-
-                    <td>
-                        <%= animal.foundLocation %>
-                    </td>
-
-                    <td>
-                        <span class="badge status-<%= animal.rescueStatus %>">
-                            <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="badge status-<%= animal.adoptionStatus %>">
-                            <%= labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown' %>
-                        </span>
-                    </td>
-
-                    <td>
-                        <%= animal.createdAt ? formatDate(animal.createdAt) : '—' %>
-                    </td>
-
-                    <td>
-                        <% const closedCase = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted'; %>
-                        <% if (mode === 'rescue' && !closedCase) { %>
-                        <a class="button" href="/animals/<%= animal._id %>/rescue">Manage Rescue</a>
-                        <% } else if (mode === 'adoption' && !closedCase) { %>
-                        <a class="button" href="/animals/<%= animal._id %>/adoption">Manage Adoption</a>
-                        <% } else if (mode === 'followups') { %>
-                        <a href="/animals/<%= animal._id %>#care-journal">View Follow-ups</a>
-                        <% if (!closedCase) { %>
-                        <a class="button" href="/animals/<%= animal._id %>/followups/new"><%- include('icon', { name: 'notes-plus' }) %> Add Follow-up</a>
-                        <% } %>
-                        <% } else { %>
-                        <a href="/animals/<%= animal._id %>"><%- include('icon', { name: 'arrow' }) %> View Details</a>
-                        <% } %>
-                    </td>
-                </tr>
-                <% }) %>
-
+                    <% animals.forEach(animal => { %>
+                        <tr id="record-<%= animal._id %>">
+                            <td>
+                                <strong class="animal-id">
+                                    <span class="mini-animal animal-avatar-<%= animal.animalType %>"
+                                        aria-hidden="true"> <%- include('pet-avatar', { animal }) %>
+                                        </span>
+                                    <%= animal.animalCode %>
+                                </strong>
+                                <p> <%= animal.appearance %> </p>
+                            </td>
+                            <td> <%= labels.animalTypes[animal.animalType] || 'Unknown' %> </td>
+                            <td> <%= animal.foundLocation %> </td>
+                            <td>
+                                <span class="badge status-<%= animal.rescueStatus %>"> <%=
+                                    labels.rescueStatuses[animal.rescueStatus] || 'Unknown'
+                                %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge status-<%= animal.adoptionStatus %>"> <%=
+                                    labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown'
+                                %>
+                                </span>
+                            </td>
+                            <td> <%= animal.createdAt ? formatDate(animal.createdAt) : '—' %> </td>
+                            <td>
+                                <%
+                                    const closedCase =
+                                        Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted';
+                                %>
+                                <% if (mode === 'rescue' && !closedCase) { %>
+                                    <a class="button"
+                                        href="/animals/<%= animal._id %>/rescue<%=
+                                            returnQuery('record-' + animal._id) %>">
+                                        Manage Rescue</a>
+                                <% } else if (mode === 'adoption' && !closedCase) { %>
+                                    <a class="button"
+                                        href="/animals/<%= animal._id %>/adoption<%=
+                                            returnQuery('record-' + animal._id) %>">
+                                        Manage Adoption</a>
+                                <% } else if (mode === 'followups') { %>
+                                    <a
+                                        href="/animals/<%= animal._id %><%=
+                                            returnQuery('record-' + animal._id) %>#care-journal">
+                                        View Follow-ups</a>
+                                    <% if (!closedCase) { %>
+                                        <a class="button"
+                                            href="/animals/<%= animal._id %>/followups/new<%=
+                                                returnQuery('record-' + animal._id) %>">
+                                            <%-
+                                                include('icon', { name: 'notes-plus' })
+                                            %> Add Follow-up</a>
+                                    <% } %>
+                                <% } else { %>
+                                    <a
+                                        href="/animals/<%= animal._id %><%=
+                                            returnQuery('record-' + animal._id) %>"
+                                    ><%- include('icon', { name: 'arrow' }) %>
+                                        View Details</a>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
                 <% } else { %>
-
-                <tr>
-                    <td colspan="7" class="empty">
-                        No animals match these filters. Try changing your search.
-                    </td>
-                </tr>
-
+                    <tr>
+                        <td colspan="7" class="empty"> No animals match these filters. Try
+                            changing your search. </td>
+                    </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
-
     <div class="pagination">
-        <span>
-            Total <%= total %> records · 3 per page
-        </span>
-
+        <span> Total <%= total %> records · 3 per page </span>
         <div>
             <% if (page > 1) { %>
-            <a class="button" href="<%= pageUrl(page - 1) %>">
-                Previous
-            </a>
+                <a class="button" href="<%= pageUrl(page - 1) %>"> Previous </a>
             <% } else { %>
-            <button type="button" disabled>Previous</button>
+                <button type="button" disabled>Previous</button>
             <% } %>
-
             <span>Page <%= page %> / <%= pageCount %> </span>
-
             <% if (page < pageCount) { %>
-            <a class="button" href="<%= pageUrl(page + 1) %>">
-                Next
-            </a>
+                <a class="button" href="<%= pageUrl(page + 1) %>"> Next </a>
             <% } else { %>
-            <button type="button" disabled>Next</button>
+                <button type="button" disabled>Next</button>
             <% } %>
         </div>
     </div>
-
 </section>
 <link rel="stylesheet" href="/date_range.css">
 <script src="/date_range.js" defer>
 </script>
+
 <%- include('footer') %>

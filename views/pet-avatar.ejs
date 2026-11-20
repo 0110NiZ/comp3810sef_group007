@@ -1,0 +1,19 @@
+<%
+    if (['cat', 'dog'].includes(animal.animalType)) {
+        const sequence =
+            Number.parseInt(animal.animalCode.split('-').pop(), 16) ||
+            0;
+        const color = sequence % 4;
+        const facingLeft = color % 2 === 0;
+        const x = color * 128 + 1;
+        const y = facingLeft ? 2 : 98;
+%>
+    <svg class="record-pet" viewBox="<%= x %> <%= y %> 30 30" aria-hidden="true"
+        focusable="false">
+        <image
+            href="/assets/vendor/lpc-pets/<%= animal.animalType %>.png"
+            width="512"
+            height="256"
+        />
+    </svg>
+<% } else { %> <%- include('icon', { name: 'paw' }) %> <% } %>

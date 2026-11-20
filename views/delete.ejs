@@ -1,57 +1,56 @@
 <%- include('header') %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">RECORD MANAGEMENT</span>
-        <h1 class="pixel-page-title"><%- include('icon', { name: 'warning' }) %>Delete Animal Record</h1>
+        <h1 class="pixel-page-title">
+            <%- include('icon', { name: 'warning' }) %>Delete Animal Record
+        </h1>
         <p>For administrators to remove incorrect or duplicate records.</p>
     </div>
-    <a class="button" href="/animals/<%= animal._id %>/adoption">Back to Adoption</a>
+    <a class="button" href="<%= cancelUrl %>"><%= cancelLabel %></a>
 </div>
 <% if (error) { %>
-<div class="warning-box" role="alert">
-    <p>
-        <%= error %>
-    </p>
-</div>
+    <div class="warning-box" role="alert">
+        <p> <%= error %> </p>
+    </div>
 <% } %>
+
 <section class="panel form-panel">
     <div class="warning-box">
         <h2>This action cannot be undone</h2>
-        <p>This deletes the animal and its follow-ups and adoptions. An audit record retains who deleted it,
-            when, its code and the reason. Closed cases cannot be deleted.</p>
+        <p>This deletes the animal and its follow-ups and adoptions. An audit record
+            retains who deleted it, when, its code and the reason. Closed cases cannot be
+            deleted.</p>
     </div>
     <dl>
         <dt>Animal Code</dt>
-        <dd>
-            <%= animal.animalCode %>
-        </dd>
+        <dd> <%= animal.animalCode %> </dd>
         <dt>Appearance</dt>
-        <dd>
-            <%= animal.appearance %>
-        </dd>
+        <dd> <%= animal.appearance %> </dd>
         <dt>Found Location</dt>
-        <dd>
-            <%= animal.foundLocation %>
-        </dd>
+        <dd> <%= animal.foundLocation %> </dd>
         <dt>Adoption Status</dt>
-        <dd>
-            <%= labels.adoptionStatuses[animal.adoptionStatus] %>
-        </dd>
+        <dd> <%= labels.adoptionStatuses[animal.adoptionStatus] %> </dd>
     </dl>
-    <form method="POST" action="/animals/<%= animal._id %>/delete" class="spaced">
+    <form method="POST" action="<%= deleteAction %>" class="spaced">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <label>Reason for Deletion <em>*</em>
             <textarea name="deletionReason" rows="4" maxlength="1000"
                 required><%= values.deletionReason %></textarea>
         </label>
         <label class="checkbox spaced">
-            <input type="checkbox" name="confirm" value="yes" required>I confirm this record is incorrect or
-            duplicated and agree to delete its related records
+            <input type="checkbox" name="confirm" value="yes" required>I confirm this
+            record is incorrect or duplicated and agree to delete its related records
         </label>
         <div class="form-bottom">
-            <a class="button" href="/animals/<%= animal._id %>/adoption"><%- include('icon', { name: 'back' }) %> Cancel</a>
-            <button class="danger" type="submit"><%- include('icon', { name: 'delete' }) %>Confirm Deletion</button>
+            <a class="button" href="<%= cancelUrl %>">
+                <%- include('icon', { name: 'back' }) %> Cancel
+            </a>
+            <button class="danger" type="submit">
+                <%- include('icon', { name: 'delete' }) %>Confirm Deletion
+            </button>
         </div>
     </form>
 </section>
+
 <%- include('footer') %>

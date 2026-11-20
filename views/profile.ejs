@@ -1,45 +1,16 @@
 <%- include('header') %>
+
 <div class="page-heading">
-    <div>
-        <span class="eyebrow">YOUR WORKSPACE IDENTITY</span>
-        <h1 class="pixel-page-title"><%- include('icon', { name: 'user' }) %>My Account</h1>
-        <p>Keep your contact details up to date for your team.</p>
-    </div>
+    <h1 class="pixel-page-title">
+        <%- include('icon', { name: 'user' }) %><%= editing ? 'Edit Profile' : 'My Account' %>
+    </h1>
 </div>
-<% if (error) { %>
-<p class="warning-box" role="alert">
-    <%= error %>
-</p>
-<% } %>
-<% if (success) { %>
-<p class="form-feedback" role="status">
-    <%= success %>
-</p>
-<% } %>
-<section class="panel account-summary">
-    <span class="profile-avatar"><%- include('icon', { name: 'user' }) %><span class="avatar-initial">
-        <%= profile.displayName.slice(0, 1).toUpperCase() %>
-        </span>
-    </span>
-    <div>
-        <h2>
-            <%= profile.displayName %>
-        </h2>
-        <p class="muted">@<%= profile.username %>
-        </p>
-    </div>
-    <span class="badge status-placed">
-        <%= profile.role === 'admin' ? 'Administrator' : 'Staff' %>
-    </span>
-</section>
-<div class="account-layout spaced">
-    <section class="panel">
-        <div class="section-heading">
-            <h2 class="icon-heading">
-                <span class="heading-icon"><%- include('icon', { name: 'user' }) %></span>Contact Details
-            </h2>
-            <span class="muted">Visible to your team</span>
-        </div>
+
+<section class="panel employee-profile">
+    <% if (editing) { %>
+        <% if (error) { %>
+            <p class="warning-box" role="alert"><%= error %></p>
+        <% } %>
         <form method="POST" action="/profile">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="form-grid">
@@ -52,25 +23,39 @@
                         autocomplete="tel" placeholder="Work contact number">
                 </label>
             </div>
-            <div class="form-bottom">
-                <p>Your username and role are managed separately.</p>
-                <button type="submit" class="primary"><%- include('icon', { name: 'check' }) %> Save Changes</button>
+            <div class="actions spaced">
+                <a class="button" href="/profile">Cancel</a>
+                <button type="submit" class="primary">
+                    <%- include('icon', { name: 'check' }) %> Save Changes
+                </button>
             </div>
         </form>
-    </section>
-    <section class="panel security-panel">
-        <span class="eyebrow">ACCOUNT SECURITY</span>
-        <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'shield' }) %></span>Password & Security
-        </h2>
-        <p>Use a unique password. Changing it signs out your other sessions.</p>
-        <a class="button spaced" href="/password">Change Password →</a>
-        <div class="panel-note">
-            <strong>Access level</strong>
-            <p>
-                <%= profile.role === 'admin' ? 'Manage staff accounts and remove incorrect open records, alongside daily rescue work.' : 'Manage animal care, follow-ups and adoption. Account administration is restricted.' %>
-            </p>
+    <% } else { %>
+        <div class="section-heading">
+            <h2><%= profile.displayName %></h2>
+            <% if (success) { %>
+                <span role="status"><%= success %></span>
+            <% } %>
         </div>
-    </section>
-</div>
+        <dl class="employee-fields">
+            <div>
+                <dt>Username</dt>
+                <dd><%= profile.username %></dd>
+            </div>
+            <div>
+                <dt>Role</dt>
+                <dd><%= profile.role === 'admin' ? 'Administrator' : 'Staff' %></dd>
+            </div>
+            <div>
+                <dt>Phone Number</dt>
+                <dd><%= profile.phone || 'Not provided' %></dd>
+            </div>
+        </dl>
+        <div class="actions">
+            <a class="button primary" href="/profile?edit=1">Edit Profile</a>
+            <a class="button" href="/password">Change Password</a>
+        </div>
+    <% } %>
+</section>
+
 <%- include('footer') %>

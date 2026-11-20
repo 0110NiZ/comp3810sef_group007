@@ -1,17 +1,28 @@
 <%- include('header') %>
+
 <section class="panel form-panel result-panel">
-    <span class="eyebrow">WORKSPACE NOTICE</span>
-    <h1 class="pixel-page-title"><%- include('icon', { name: /forbidden|denied|unauthor|sign in/i.test(title) ? 'lock' : /not found/i.test(title) ? 'search' : 'warning' }) %>
-        <%= title %>
-    </h1>
-    <p class="spaced" role="status">
-        <%= message %>
-    </p>
+    <h1 class="pixel-page-title"><%-
+        include('icon', {
+            name: /forbidden|denied|unauthor|sign in/i.test(title)
+                ? 'lock'
+                : /not found/i.test(title)
+                  ? 'search'
+                  : 'warning'
+        })
+    %> <%= title %> </h1>
+    <p class="spaced" role="status"> <%= message %> </p>
     <div class="actions">
-        <a class="button primary" href="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/animals' %>">
-            <%= typeof returnUrl !== 'undefined' && returnUrl.startsWith('/animals/') ? 'Back to Details' : 'Back to Records' %>
-        </a>
+        <a
+            class="button primary"
+            href="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/animals' %>"
+        > <%=
+            typeof returnUrl !== 'undefined' &&
+                returnUrl.startsWith('/animals/')
+                    ? 'Back to Details'
+                    : 'Back to Records'
+        %> </a>
         <a class="button" href="/">Dashboard</a>
     </div>
 </section>
+
 <%- include('footer') %>

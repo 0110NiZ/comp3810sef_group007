@@ -1,76 +1,72 @@
 <%- include('header') %>
-<%- include('work-return') %>
+
+<% if (!backSource) { %> <%- include('work-return') %> <% } %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">COMPLETE ADOPTION</span>
-        <h1 class="pixel-page-title"><%- include('icon', { name: 'home-check' }) %>
-            <%= animal.closedAt ? 'Adoption Completed' : 'Complete Adoption' %>
+        <h1 class="pixel-page-title">
+            <%- include('icon', { name: 'home-check' }) %> <%= animal.closedAt ? 'Adoption Completed' : 'Complete Adoption' %>
         </h1>
         <p>Review the handover before closing this case.</p>
     </div>
-    <a class="button" href="/animals/<%= animal._id %>/adoption">Back to Adoption</a>
+    <a class="button" href="<%= backSource?.url || '/animals/' + animal._id + '/adoption' %>">
+        Back to <%= backSource?.label || 'Adoption' %>
+    </a>
 </div>
 <% if (error) { %>
-<div class="warning-box" role="alert">
-    <p>
-        <%= error %>
-    </p>
-    <% if (stale) { %>
-    <a class="button" href="/animals/<%= animal._id %>/close">Reload and Review</a>
-    <% } %>
-</div>
+    <div class="warning-box" role="alert">
+        <p> <%= error %> </p>
+        <% if (stale) { %>
+            <a class="button" href="/animals/<%= animal._id %>/close<%= carryReturn %>">Reload and
+                Review</a>
+        <% } %>
+    </div>
 <% } %>
+
 <section class="panel form-panel">
     <h2>Review Closure</h2>
     <dl>
         <dt>Animal Code</dt>
-        <dd>
-            <%= animal.animalCode %>
-        </dd>
+        <dd> <%= animal.animalCode %> </dd>
         <dt>Appearance</dt>
-        <dd>
-            <%= animal.appearance %>
-        </dd>
+        <dd> <%= animal.appearance %> </dd>
         <dt>Adopter</dt>
-        <dd>
-            <%= adoption ? adoption.adopterName : 'Not registered' %>
-        </dd>
+        <dd> <%= adoption ? adoption.adopterName : 'Not registered' %> </dd>
         <dt>Phone Number</dt>
-        <dd>
-            <%= adoption ? adoption.adopterPhone : 'Not registered' %>
-        </dd>
+        <dd> <%= adoption ? adoption.adopterPhone : 'Not registered' %> </dd>
         <dt>Adoption Status</dt>
-        <dd>
-            <%= labels.adoptionStatuses[animal.adoptionStatus] %>
-        </dd>
+        <dd> <%= labels.adoptionStatuses[animal.adoptionStatus] %> </dd>
         <% if (animal.closedAt) { %>
-        <dt>Closed
-            At</dt>
-        <dd>
-            <%= formatDate(animal.closedAt) %>
-        </dd>
+            <dt>Closed At</dt>
+            <dd> <%= formatDate(animal.closedAt) %> </dd>
         <% } %>
     </dl>
     <% if (animal.closedAt) { %>
-    <p class="spaced">Handover is complete. Animal and adoption records are now
-        read-only.</p>
+        <p class="spaced">Handover is complete. Animal and adoption records are now
+            read-only.</p>
     <% } else if (animal.adoptionStatus === 'processing' && adoption && !adoption.completedAt) { %>
-    <form method="POST" action="/animals/<%= animal._id %>/close" class="spaced">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="adoptionId" value="<%= adoption._id %>">
-        <input type="hidden" name="adoptionVersion" value="<%= adoption.__v || 0 %>">
-        <label class="checkbox">
-            <input type="checkbox" name="confirm" value="yes" required>I have checked the adoption details and
-            completed the handover
-        </label>
-        <div class="form-bottom">
-            <p>Confirmation closes the case and retains its history.</p>
-            <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>>Complete Adoption & Close
-                Case</button>
-        </div>
-    </form>
+        <form
+            method="POST"
+            action="/animals/<%= animal._id %>/close<%= carryReturn %>"
+            class="spaced"
+        >
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="adoptionId" value="<%= adoption._id %>">
+            <input type="hidden" name="adoptionVersion" value="<%= adoption.__v || 0 %>">
+            <label class="checkbox">
+                <input type="checkbox" name="confirm" value="yes" required>I have checked
+                the adoption details and completed the handover
+            </label>
+            <div class="form-bottom">
+                <p>Confirmation closes the case and retains its history.</p>
+                <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>>
+                    Complete Adoption &
+                    Close Case</button>
+            </div>
+        </form>
     <% } else { %>
-    <p class="spaced">Register an adoption before closing this case.</p>
+        <p class="spaced">Register an adoption before closing this case.</p>
     <% } %>
 </section>
+
 <%- include('footer') %>

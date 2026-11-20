@@ -3,9 +3,10 @@
         <select name="animalType" required>
             <option value="">Select type</option>
             <% Object.entries(labels.animalTypes).forEach(([value,label]) => { %>
-            <option value="<%= value %>" <%= animal.animalType === value ? 'selected' : '' %>>
-                <%= label %>
-            </option>
+                <option
+                    value="<%= value %>"
+                    <%= animal.animalType === value ? 'selected' : '' %>
+                > <%= label %> </option>
             <% }) %>
         </select>
     </label>
@@ -14,14 +15,14 @@
             placeholder="e.g. East campus entrance" required maxlength="200">
     </label>
     <label class="full">Appearance <em>*</em>
-        <textarea name="appearance" rows="3" placeholder="Colour, size and distinguishing features" required
+        <textarea name="appearance" rows="3"
+            placeholder="Colour, size and distinguishing features" required
             maxlength="1000"><%= animal.appearance || '' %></textarea>
     </label>
-    <label class="full">Health Condition
-        <em>*</em>
+    <label class="full">Health Condition <em>*</em>
         <textarea name="healthStatus" rows="3"
-            placeholder="Describe observed health conditions, or enter Pending assessment" required
-            maxlength="1000"><%= animal.healthStatus || '' %></textarea>
+            placeholder="Describe observed health conditions, or enter Pending assessment"
+            required maxlength="1000"><%= animal.healthStatus || '' %></textarea>
     </label>
     <label>Contact Name <em>*</em>
         <input name="contactName" value="<%= animal.contactName || '' %>"

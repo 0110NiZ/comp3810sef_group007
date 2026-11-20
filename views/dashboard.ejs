@@ -1,179 +1,124 @@
 <%- include('header') %>
 
-<section class="welcome-banner">
-    <div>
-        <span class="eyebrow">CARE, COORDINATED</span>
-        <h1>A little care. A place to belong.</h1>
-        <p>Your team’s care desk. Review recent updates, coordinate placement and keep the next step in sight.</p>
-    </div>
-    <div class="welcome-actions">
-        <img class="cottage-art" src="/assets/landscape.svg" alt="" aria-hidden="true">
-        <a class="button primary" href="/animals/new"><%- include('icon', { name: 'plus' }) %>Register Animal
-        </a>
-    </div>
-</section>
+<div class="panel dashboard-title-row">
+    <h1 class="dashboard-title">Dashboard</h1>
+    <img class="dashboard-illustration" src="/assets/landscape.svg" alt="">
+    <a class="button primary dashboard-register" href="/animals/new">
+        <%- include('icon', { name: 'plus' }) %> Register Animal
+    </a>
+</div>
 
 <div class="section-heading dashboard-heading">
     <div>
-        <span class="eyebrow">OVERVIEW</span>
         <h2>Rescue Overview</h2>
     </div>
-
-    <span class="muted">All Animal Records</span>
 </div>
 
 <div class="metrics">
     <section class="metric">
         <span class="metric-icon" aria-hidden="true"><%- include('icon', { name: 'paw' }) %></span>
         <span>Total Animals</span>
-
-        <strong class="number">
-            <%= total %>
-            <small>animals</small>
-        </strong>
-
-        <p>A complete history of care</p>
+        <strong class="number"> <%= total %> </strong>
     </section>
-
     <% rescueCounts.forEach((item, i) => { %>
-    <section class="metric metric-<%= i %>">
-        <span class="metric-icon" aria-hidden="true">
-            <%- include('icon', { name: ['clock', 'care', 'home'][i] || 'paw' }) %>
-        </span>
-
-        <span>
-            <%= item.label %>
-        </span>
-
-        <strong class="number">
-            <%= item.count %>
-            <small>animals</small>
-        </strong>
-
-        <p>
-            <%= [
-                    'Awaiting assignment',
-                    'Treatment and recovery underway',
-                    'Placement arranged'
-                ][i] || 'Rescue status' %>
-        </p>
-    </section>
+        <section class="metric metric-<%= i %>">
+            <span class="metric-icon" aria-hidden="true">
+                <%- include('icon', { name: ['clock', 'care', 'home'][i] || 'paw' }) %>
+            </span>
+            <span> <%= item.label %> </span>
+            <strong class="number"> <%= item.count %> </strong>
+        </section>
     <% }) %>
 </div>
+
+<section class="panel followup-agenda spaced">
+    <h2 class="icon-heading"><%- include('icon', { name: 'notes' }) %>Follow-ups Due</h2>
+    <% if (!dueFollowUps.length) { %>
+        <p>No follow-ups due today or overdue.</p>
+    <% } %>
+    <% dueFollowUps.forEach(entry => { %>
+        <div class="agenda-entry" id="due-<%= entry._id %>">
+            <strong><%= entry.animalCode %></strong>
+            <span><%= entry.due === today ? 'Due today' : 'Overdue' %> · <%= entry.due %></span>
+            <a
+                class="button"
+                href="/animals/<%= entry._id %>/followups/new<%= returnQuery('due-' + entry._id) %>"
+            >Add
+                Follow-up</a>
+        </div>
+    <% }) %>
+</section>
+
+<section class="panel dashboard-recent">
+    <div class="section-heading">
+        <h2 class="icon-heading">
+            <span class="heading-icon">
+                <%- include('icon', { name: 'clock' }) %>
+            </span>
+            Recently Updated
+        </h2>
+        <a class="recent-link" href="/animals">
+            All Records <%- include('icon', { name: 'arrow' }) %>
+        </a>
+    </div>
+    <% if (animals.length > 0) { %>
+        <% animals.forEach(animal => { %>
+            <div class="recent-entry" id="record-<%= animal._id %>">
+                <span class="animal-avatar animal-avatar-<%= animal.animalType %>"
+                    aria-hidden="true"> <%- include('pet-avatar', { animal }) %> </span>
+                <strong class="recent-code"><%= animal.animalCode %></strong>
+                <div class="recent-description">
+                    <p> <%= animal.appearance %> </p>
+                    <small>
+                        <%= animal.foundLocation %> · <%= animal.updatedAt ? formatDate(animal.updatedAt) : '—' %>
+                    </small>
+                </div>
+                <div class="recent-badges">
+                    <span class="badge status-<%= animal.rescueStatus %>">
+                        <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
+                    </span>
+                    <span class="badge status-<%= animal.adoptionStatus %>"> <%=
+                        labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown'
+                    %> </span>
+                </div>
+                <a class="recent-link"
+                    href="/animals/<%= animal._id %><%= returnQuery('record-' + animal._id) %>"
+                    aria-label="View <%= animal.animalCode %> Details">
+                    View Details <%- include('icon', { name: 'arrow' }) %>
+                </a>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <p class="empty"> No animal records yet. Register the first animal to get
+            started. </p>
+    <% } %>
+</section>
 
 <div class="pixel-chart-grid">
     <%- include('rescue-chart', { rescueCounts }) %>
     <section class="panel">
-        <span class="eyebrow">A NEW HOME</span>
         <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'heart' }) %></span>Adoption Progress
-        </h2>
-
-        <% adoptionCounts.forEach((item, i) => { %>
-        <div class="adoption-row">
-            <div>
-                <span>
-                    <i class="legend-dot legend-<%= i %>">
-                    </i>
-                    <%= item.label %>
-                </span>
-
-                <strong>
-                    <%= item.count %>
-                </strong>
-            </div>
-
-            <div class="progress-track">
-                <span class="progress-fill fill-<%= i %>"
-                    style="width: <%= total ? item.count / total * 100 : 0 %>%">
-                </span>
-            </div>
-        </div>
-        <% }) %>
-
-        <p class="panel-note">
-            Completed adoptions retain their full history.
-        </p>
-    </section>
-</div>
-<div class="pixel-dashboard-bottom">
-    <section class="panel recent-animals">
-        <div class="section-heading">
-            <h2 class="icon-heading">
-                <span class="heading-icon"><%- include('icon', { name: 'clock' }) %></span>Recently Updated
-            </h2>
-            <a href="/animals">All Records</a>
-        </div>
-
-        <% if (animals.length > 0) { %>
-        <% animals.forEach(animal => { %>
-        <div class="record-row">
-            <span class="animal-avatar animal-avatar-<%= animal.animalType %>" aria-hidden="true">
-                <%- include('icon', { name: ['cat', 'dog'].includes(animal.animalType) ? animal.animalType : 'paw' }) %>
-            </span>
-
-            <div class="record-copy">
-                <strong>
-                    <%= animal.animalCode %>
-                </strong>
-
-                <p>
-                    <%= animal.appearance %>
-                </p>
-
-                <small>
-                    <%= animal.foundLocation %>
-                    ·
-                    <%= animal.updatedAt ? formatDate(animal.updatedAt) : '—' %>
-                </small>
-            </div>
-
-            <div class="record-statuses">
-            <span class="badge status-<%= animal.rescueStatus %>">
-                <%= labels.rescueStatuses[animal.rescueStatus] || 'Unknown' %>
-            </span>
-
-            <span class="badge status-<%= animal.adoptionStatus %>">
-                <%= labels.adoptionStatuses[animal.adoptionStatus] || 'Unknown' %>
-            </span>
-            </div>
-            <a class="button primary record-details-button" href="/animals/<%= animal._id %>"
-                aria-label="View <%= animal.animalCode %> Details">
-                View Details
-                <%- include('icon', { name: 'arrow' }) %>
-            </a>
-        </div>
-        <% }) %>
-        <% } else { %>
-        <p class="empty">
-            No animal records yet. Register the first animal to get started.
-        </p>
-        <% } %>
-    </section>
-    <section class="panel pixel-quick-panel">
-        <h2 class="icon-heading"><%- include('icon', { name: 'plus' }) %>Quick Actions</h2>
-        <nav class="pixel-quick-grid" aria-label="Quick actions">
-            <a class="pixel-quick quick-green" href="/animals/new">
-                <%- include('icon', { name: 'paw-plus' }) %>
-                <strong>Add Animal</strong>
-                <small>Start a care record</small>
-            </a>
-            <a class="pixel-quick quick-blue" href="/animals">
-                <%- include('icon', { name: 'notes' }) %>
-                <strong>Animal Records</strong>
-                <small>Find an animal</small>
-            </a>
-            <a class="pixel-quick quick-yellow" href="/rescue-management">
-                <%- include('icon', { name: 'care' }) %>
-                <strong>Rescue Management</strong>
-                <small>Coordinate care</small>
-            </a>
-            <a class="pixel-quick quick-pink" href="/adoption-management">
+            <span class="heading-icon">
                 <%- include('icon', { name: 'heart' }) %>
-                <strong>Adoption Management</strong>
-                <small>Find a new home</small>
-            </a>
-        </nav>
+            </span>
+            Adoption Progress
+        </h2>
+        <% adoptionCounts.forEach((item, i) => { %>
+            <div class="adoption-row">
+                <div>
+                    <span>
+                        <i class="legend-dot legend-<%= i %>">
+                        </i> <%= item.label %>
+                    </span>
+                    <strong> <%= item.count %> </strong>
+                </div>
+                <div class="progress-track">
+                    <span class="progress-fill fill-<%= i %>"
+                        style="width: <%= total ? item.count / total * 100 : 0 %>%">
+                    </span>
+                </div>
+            </div>
+        <% }) %>
     </section>
 </div>
 

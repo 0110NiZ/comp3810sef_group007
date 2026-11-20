@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>
-        <%= title %> · Animal Rescue Center</title>
+    <title> <%= title %> · Animal Rescue Center</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/icons.css">
     <link rel="stylesheet" href="/workspace.css">
@@ -13,82 +11,124 @@
     <script src="/app.js" defer>
     </script>
 </head>
-
 <body data-page="<%= typeof workAreaKey === 'string' && workAreaKey ? workAreaKey : activePage %>">
     <div class="app-shell">
         <aside class="sidebar">
             <a class="brand" href="/">
-                <span class="brand-mark" aria-hidden="true"><img src="/assets/cottage.svg" alt=""></span>
-                <span>Animal Rescue Center<small>RESCUE & ADOPTION</small>
+                <span class="brand-mark" aria-hidden="true">
+                    <img src="/assets/cottage.svg" alt="">
                 </span>
+                <span>Animal Rescue Center </span>
             </a>
             <div class="nav-caption">Workspace</div>
             <nav aria-label="Main navigation">
-                <% const navigationPage = typeof workAreaKey === 'string' && workAreaKey ? workAreaKey : activePage; %>
-                <% const links = [
-                    ['home', '/', 'Overview', 'home'],
-                    ['list', '/animals', 'Animal Records', 'paw'],
-                    ['create', '/animals/new', 'Add Animal', 'paw-plus'],
-                    ['rescue', '/rescue-management', 'Rescue Management', 'care'],
-                    ['followups', '/followup-records', 'Follow-up Records', 'notes'],
-                    ['adoption', '/adoption-management', 'Adoption Management', 'heart']
-                ]; %>
+                <%
+                    const navigationPage =
+                        typeof workAreaKey === 'string' && workAreaKey
+                            ? workAreaKey
+                            : activePage;
+                %>
+                <%
+                    const links = [
+                        ['home', '/', 'Overview', 'home'],
+                        ['list', '/animals', 'Animal Records', 'paw'],
+                        ['create', '/animals/new', 'Add Animal', 'paw-plus'],
+                        ['rescue', '/rescue-management', 'Rescue Management', 'care'],
+                        [
+                            'followups',
+                            '/followup-records',
+                            'Follow-up Records',
+                            'notes'
+                        ],
+                        [
+                            'adoption',
+                            '/adoption-management',
+                            'Adoption Management',
+                            'heart'
+                        ]
+                    ];
+                %>
                 <% links.forEach(([key, href, label, icon]) => { %>
-                <a class="nav-item <%= navigationPage === key ? 'active' : '' %>" href="<%= href %>"
-                    <%- navigationPage === key ? 'aria-current="page"' : '' %>>
-                    <span aria-hidden="true">
-                        <%- include('icon', { name: icon }) %>
-                    </span>
-                    <%= label %>
-                </a>
+                    <a
+                        class="nav-item <%= navigationPage === key ? 'active' : '' %>"
+                        href="<%= href %>"
+                        <%- navigationPage === key ? 'aria-current="page"' : '' %>
+                    >
+                        <span aria-hidden="true">
+                            <%- include('icon', { name: icon }) %>
+                        </span>
+                        <%= label %>
+                    </a>
                 <% }); %>
                 <div class="nav-caption">Team & Account</div>
                 <% if (currentUser && currentUser.role === 'admin') { %>
-                <a class="nav-item <%= activePage === 'users' ? 'active' : '' %>" href="/users"
-                    <%- activePage === 'users' ? 'aria-current="page"' : '' %>>
-                    <span aria-hidden="true"><%- include('icon', { name: 'team' }) %></span>Team Accounts
-                </a>
+                    <a
+                        class="nav-item <%= activePage === 'users' ? 'active' : '' %>"
+                        href="/users"
+                        <%- activePage === 'users' ? 'aria-current="page"' : '' %>
+                    >
+                        <span aria-hidden="true">
+                            <%- include('icon', { name: 'team' }) %>
+                        </span>
+                        Team Accounts
+                    </a>
                 <% } %>
-                <a class="nav-item <%= activePage === 'profile' ? 'active' : '' %>" href="/profile"
-                    <%- activePage === 'profile' ? 'aria-current="page"' : '' %>>
-                    <span aria-hidden="true"><%- include('icon', { name: 'user' }) %></span>My Account
+                <a
+                    class="nav-item <%= activePage === 'profile' ? 'active' : '' %>"
+                    href="/profile"
+                    <%- activePage === 'profile' ? 'aria-current="page"' : '' %>
+                >
+                    <span aria-hidden="true">
+                        <%- include('icon', { name: 'user' }) %>
+                    </span>
+                    My Account
                 </a>
                 <% if (currentUser) { %>
-                <form method="POST" action="/logout">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <button class="nav-item sign-out" type="submit">
-                        <span aria-hidden="true"><%- include('icon', { name: 'logout' }) %></span>Sign Out
-                    </button>
-                </form>
+                    <form method="POST" action="/logout">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button class="nav-item sign-out" type="submit">
+                            <span aria-hidden="true">
+                                <%- include('icon', { name: 'logout' }) %>
+                            </span>
+                            Sign Out
+                        </button>
+                    </form>
                 <% } %>
             </nav>
             <div class="sidebar-note">
-                <img class="sidebar-pets" src="/assets/companions.svg" alt="" aria-hidden="true">
-                <span class="tiny-dot">
-                </span>Every record. A new beginning.
+                <img class="sidebar-pets" src="/assets/companions.svg" alt=""
+                    aria-hidden="true">
             </div>
         </aside>
         <div class="workspace">
             <header class="topbar">
-                <img class="topbar-landscape" src="/assets/landscape.svg" alt="" aria-hidden="true">
-                <div>
-                    <span class="eyebrow">ANIMAL RESCUE CENTER WORKSPACE</span>
-                    <span class="topbar-title">
-                        <%= title %>
-                    </span>
-                </div>
+                <% if (activePage !== 'home') { %>
+                    <img class="topbar-landscape" src="/assets/landscape.svg" alt=""
+                        aria-hidden="true">
+                    <div>
+                        <span class="topbar-title"> <%= title %> </span>
+                    </div>
+                <% } %>
                 <% if (currentUser) { %>
-                <a href="/profile" class="user-chip">
-                    <span class="avatar">
-                        <%= (currentUser.displayName || currentUser.username).slice(0, 1).toUpperCase() %>
-                    </span>
-                    <span>
-                        <%= currentUser.displayName %>
-                        <small>
-                            <%= currentUser.role === 'admin' ? 'Administrator' : 'Staff' %>
-                        </small>
-                    </span>
-                </a>
+                    <details class="account-menu">
+                        <summary class="user-chip"
+                            aria-label="Account menu for <%= currentUser.displayName %>">
+                            <span class="avatar"><%- include('icon', { name: 'user' }) %></span>
+                            <span><%= currentUser.displayName %></span>
+                            <span aria-hidden="true">▾</span>
+                        </summary>
+                        <div class="account-options">
+                            <strong><%=
+                                currentUser.role === 'admin' ? 'Administrator' : 'Staff'
+                            %></strong>
+                            <a class="button" href="/profile">My Account</a>
+                            <a class="button" href="/password">Change Password</a>
+                            <form method="POST" action="/logout">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <button class="button" type="submit">Sign Out</button>
+                            </form>
+                        </div>
+                    </details>
                 <% } %>
             </header>
             <main class="container">

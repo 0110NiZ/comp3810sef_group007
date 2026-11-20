@@ -1,34 +1,40 @@
 <%- include('header') %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">NEW RECORD</span>
-        <h1 class="pixel-page-title"><%- include('icon', { name: 'paw-plus' }) %>Register an Animal</h1>
+        <h1 class="pixel-page-title">
+            <%- include('icon', { name: 'paw-plus' }) %>Register an Animal
+        </h1>
         <p>Start with the information needed to arrange care.</p>
     </div>
     <a class="button" href="/animals">Back to List</a>
 </div>
+
 <div class="form-layout">
     <section class="panel">
         <h2 class="icon-heading"><%- include('icon', { name: 'paw' }) %>Animal Information</h2>
         <% if (error) { %>
-        <p class="form-feedback" role="alert">
-            <%= error %>
-        </p>
+            <p class="form-feedback" role="alert"> <%= error %> </p>
         <% } %>
         <form method="POST" action="/animals/new">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <%- include('animal-fields', { animal }) %>
-            <div class="form-actions actions">
-                <a class="button" href="/animals"><%- include('icon', { name: 'back' }) %> Cancel</a>
-                <button class="primary" type="submit"><%- include('icon', { name: 'paw-plus' }) %> Register Animal</button>
+                <%- include('animal-fields', { animal }) %>
+                <div
+                class="form-actions actions">
+                <a class="button" href="/animals">
+                    <%- include('icon', { name: 'back' }) %> Cancel
+                </a>
+                <button class="primary" type="submit">
+                    <%- include('icon', { name: 'paw-plus' }) %> Register Animal
+                </button>
             </div>
         </form>
     </section>
     <aside class="panel form-aside">
         <span class="aside-symbol"><%- include('icon', { name: 'paw' }) %></span>
         <h2>Start a Record</h2>
-        <p>New animals start as Pending Rescue. The code and registration details are assigned automatically.
-        </p>
+        <p>New animals start as Pending Rescue. The code and registration details are
+            assigned automatically. </p>
         <ol class="steps">
             <li>Animal Registration</li>
             <li>Assign a Staff Member</li>
@@ -39,4 +45,5 @@
         <img class="guide-pets" src="/assets/companions.svg" alt="" aria-hidden="true">
     </aside>
 </div>
+
 <%- include('footer') %>

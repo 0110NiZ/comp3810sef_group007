@@ -16,7 +16,12 @@
 }
 
 body {
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
     color: var(--ink);
     background: var(--canvas);
 }
@@ -262,7 +267,7 @@ select:disabled {
     background: #fbf9ff;
 }
 
-.workspace-shortcuts a>span:first-of-type {
+.workspace-shortcuts a > span:first-of-type {
     flex: 1;
 }
 
@@ -301,7 +306,7 @@ select:disabled {
     color: #7b65b9;
 }
 
-.metric>span:not(.metric-icon) {
+.metric > span:not(.metric-icon) {
     display: block;
     padding-right: 38px;
     color: #635a72;

@@ -1,29 +1,33 @@
 <%- include('header') %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">TEAM ADMINISTRATION</span>
         <h1 class="pixel-page-title"><%- include('icon', { name: 'team' }) %>Team Accounts</h1>
         <p>Provide access to your team and retain a clear history of their work.</p>
     </div>
     <a href="/users/new" class="button primary">+ Create Staff Account</a>
 </div>
 <% if (success) { %>
-<p class="form-feedback" role="status">
-    <%= success %>
-</p>
+    <p class="form-feedback" role="status"> <%= success %> </p>
 <% } %>
+
 <div class="metrics spaced">
-    <% [['Total accounts', summary.total], ['Active', summary.active], ['Disabled', summary.inactive], ['Administrators', summary.administrators]].forEach(([label, count]) => { %>
-    <section class="metric"><span class="metric-icon"><%- include('icon', { name: 'team' }) %></span>
-        <span>
-            <%= label %>
-        </span>
-        <strong class="number">
-            <%= count %>
-        </strong>
-    </section>
+    <%
+        [
+            ['Total accounts', summary.total],
+            ['Active', summary.active],
+            ['Disabled', summary.inactive],
+            ['Administrators', summary.administrators]
+        ].forEach(([label, count]) => {
+    %>
+        <section class="metric">
+            <span class="metric-icon"><%- include('icon', { name: 'team' }) %></span>
+            <span> <%= label %> </span>
+            <strong class="number"> <%= count %> </strong>
+        </section>
     <% }); %>
 </div>
+
 <section class="panel">
     <div class="table-wrap">
         <table>
@@ -38,46 +42,45 @@
             </thead>
             <tbody>
                 <% users.forEach(user => { %>
-                <tr>
-                    <td>
-                        <strong>
-                            <%= user.displayName %>
-                        </strong>
-                        <p>@<%= user.username %>
-                        </p>
-                    </td>
-                    <td>
-                        <%= user.role === 'admin' ? 'Administrator' : 'Staff' %>
-                    </td>
-                    <td>
-                        <%= user.phone || '—' %>
-                    </td>
-                    <td>
-                        <span
-                            class="badge <%= user.isActive === false ? 'status-cancelled' : 'status-placed' %>">
-                            <%= user.isActive === false ? 'Disabled' : 'Active' %>
-                        </span>
-                    </td>
-                    <td>
-                        <% if (user.role === 'staff') { %>
-                        <form method="POST" action="/users/<%= user._id %>/status">
-                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                            <input type="hidden" name="isActive"
-                                value="<%= user.isActive === false ? 'true' : 'false' %>">
-                            <button type="submit" class="access-toggle"><%- include('icon', { name: 'lock' }) %>
-                                <%= user.isActive === false ? 'Enable Account' : 'Disable Account' %>
-                            </button>
-                        </form>
-                        <% } else { %>
-                        <span class="muted">Protected administrator</span>
-                        <% } %>
-                    </td>
-                </tr>
+                    <tr>
+                        <td>
+                            <strong> <%= user.displayName %> </strong>
+                            <p>@<%= user.username %> </p>
+                        </td>
+                        <td> <%= user.role === 'admin' ? 'Administrator' : 'Staff' %> </td>
+                        <td> <%= user.phone || '—' %> </td>
+                        <td>
+                            <span
+                                class="badge <%=
+                                    user.isActive === false ? 'status-cancelled' : 'status-placed'
+                                %>"
+                            > <%= user.isActive === false ? 'Disabled' : 'Active' %> </span>
+                        </td>
+                        <td>
+                            <% if (user.role === 'staff') { %>
+                                <form method="POST" action="/users/<%= user._id %>/status">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <input type="hidden" name="isActive"
+                                        value="<%=
+                                            user.isActive === false ? 'true' : 'false'
+                                        %>">
+                                    <button type="submit" class="access-toggle">
+                                        <%- include('icon', { name: 'lock' }) %> <%=
+                                            user.isActive === false ? 'Enable Account' : 'Disable Account'
+                                        %>
+                                        </button>
+                                </form>
+                            <% } else { %>
+                                <span class="muted">Protected administrator</span>
+                            <% } %>
+                        </td>
+                    </tr>
                 <% }); %>
             </tbody>
         </table>
     </div>
-    <p class="panel-note">Disabling an account blocks its next request and sign-in. Past work and attribution
-        are retained.</p>
+    <p class="panel-note">Disabling an account blocks its next request and sign-in. Past
+        work and attribution are retained.</p>
 </section>
+
 <%- include('footer') %>

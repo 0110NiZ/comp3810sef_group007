@@ -1,6 +1,6 @@
 'use strict';
 
-document.querySelectorAll('[data-copy]').forEach(button => {
+document.querySelectorAll('[data-copy]').forEach((button) => {
     button.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(button.dataset.copy);
@@ -30,12 +30,30 @@ if (placement && rescueStage && assignee) {
 }
 
 // Reject whitespace-only required text before leaving the form.
-document.querySelectorAll('textarea, input:not([type="hidden"]):not([type="password"])').forEach(field => {
-    const validate = () => {
-        field.setCustomValidity(field.required && field.value && !field.value.trim() ?
-            'Please enter a value, not only spaces.' : '');
-    };
-    field.addEventListener('input', validate);
-    field.addEventListener('change', validate);
-    validate();
-});
+document
+    .querySelectorAll('textarea, input:not([type="hidden"]):not([type="password"])')
+    .forEach((field) => {
+        const validate = () => {
+            field.setCustomValidity(
+                field.required && field.value && !field.value.trim()
+                    ? 'Please enter a value, not only spaces.'
+                    : ''
+            );
+        };
+        field.addEventListener('input', validate);
+        field.addEventListener('change', validate);
+        validate();
+    });
+
+const accountMenu = document.querySelector('.account-menu');
+if (accountMenu) {
+    document.addEventListener('click', (event) => {
+        if (!accountMenu.contains(event.target)) accountMenu.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && accountMenu.open) {
+            accountMenu.open = false;
+            accountMenu.querySelector('summary').focus();
+        }
+    });
+}

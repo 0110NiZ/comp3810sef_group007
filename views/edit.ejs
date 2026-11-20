@@ -1,31 +1,38 @@
 <%- include('header') %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">EDIT RECORD</span>
         <h1 class="pixel-page-title"><%- include('icon', { name: 'edit' }) %>Edit Animal</h1>
-        <p>
-            <%= animal.animalCode %> · Update details and contact information</p>
+        <p> <%= animal.animalCode %> · Update details and contact information</p>
     </div>
-    <a class="button" href="/animals/<%= animal._id %>">Back to Details</a>
+    <a class="button" href="<%= backSource?.url || '/animals/' + animal._id %>">
+        Back to <%= backSource?.label || 'Details' %>
+    </a>
 </div>
+
 <section class="panel form-panel">
     <h2 class="icon-heading">
         <span class="heading-icon"><%- include('icon', { name: 'paw' }) %></span>Basic Information
     </h2>
     <% if (error) { %>
-    <p class="form-feedback" role="alert">
-        <%= error %>
-    </p>
+        <p class="form-feedback" role="alert"> <%= error %> </p>
     <% } %>
-    <form method="POST" action="/animals/<%= animal._id %>/edit">
+    <form method="POST" action="/animals/<%= animal._id %>/edit<%= carryReturn %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="expectedUpdatedAt"
-            value="<%= typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt : '' %>">
-        <%- include('animal-fields', { animal }) %>
+        <input
+            type="hidden"
+            name="expectedUpdatedAt"
+            value="<%= typeof expectedUpdatedAt === 'string' ? expectedUpdatedAt : '' %>"
+        > <%- include('animal-fields', { animal }) %>
         <div class="form-actions actions">
-            <a class="button" href="/animals/<%= animal._id %>"><%- include('icon', { name: 'back' }) %> Cancel</a>
-            <button class="primary" type="submit"><%- include('icon', { name: 'check' }) %> Save Changes</button>
+            <a class="button" href="<%= backSource?.url || '/animals/' + animal._id %>">
+                <%- include('icon', { name: 'back' }) %> Cancel
+            </a>
+            <button class="primary" type="submit">
+                <%- include('icon', { name: 'check' }) %> Save Changes
+            </button>
         </div>
     </form>
 </section>
+
 <%- include('footer') %>

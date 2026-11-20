@@ -19,7 +19,9 @@
             year: 'numeric',
             month: '2-digit',
             day: '2-digit'
-        }).formatToParts(new Date()).map(part => [part.type, part.value])
+        })
+            .formatToParts(new Date())
+            .map((part) => [part.type, part.value])
     );
 
     const today = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
@@ -28,8 +30,8 @@
     let [year, month] = initialDate.split('-').map(Number);
     let selectingEnd = Boolean(from.value && !to.value);
 
-    const pad = number => String(number).padStart(2, '0');
-    const dateString = day => `${year}-${pad(month)}-${pad(day)}`;
+    const pad = (number) => String(number).padStart(2, '0');
+    const dateString = (day) => `${year}-${pad(month)}-${pad(day)}`;
 
     function updateText() {
         if (from.value && to.value) {
@@ -40,9 +42,9 @@
             trigger.textContent = 'Select Date Range';
         }
 
-        hint.textContent = selectingEnd ?
-            'Choose the end date (the same day is allowed)' :
-            'Choose the start date, then the end date';
+        hint.textContent = selectingEnd
+            ? 'Choose the end date (the same day is allowed)'
+            : 'Choose the start date, then the end date';
     }
 
     function closeCalendar() {
@@ -58,13 +60,11 @@
         }).format(new Date(Date.UTC(year, month - 1, 1)));
         grid.replaceChildren();
 
-        const firstWeekday =
-            new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+        const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
 
         const offset = (firstWeekday + 6) % 7;
 
-        const daysInMonth =
-            new Date(Date.UTC(year, month, 0)).getUTCDate();
+        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
         for (let i = 0; i < offset; i++) {
             grid.appendChild(document.createElement('span'));
@@ -80,23 +80,16 @@
 
             if (date === from.value || date === to.value) {
                 button.classList.add('y-range-edge');
-            } else if (
-                from.value &&
-                to.value &&
-                date > from.value &&
-                date < to.value
-            ) {
+            } else if (from.value && to.value && date > from.value && date < to.value) {
                 button.classList.add('y-range-middle');
             }
 
             button.addEventListener('click', () => {
                 if (!selectingEnd) {
-
                     from.value = date;
                     to.value = '';
                     selectingEnd = true;
                 } else {
-
                     if (date < from.value) {
                         to.value = from.value;
                         from.value = date;
@@ -117,9 +110,7 @@
     }
 
     function changeMonth(delta) {
-        const date = new Date(
-            Date.UTC(year, month - 1 + delta, 1)
-        );
+        const date = new Date(Date.UTC(year, month - 1 + delta, 1));
 
         year = date.getUTCFullYear();
         month = date.getUTCMonth() + 1;
@@ -136,41 +127,35 @@
         }
     });
 
-    document.getElementById('y-prev-month')
+    document
+        .getElementById('y-prev-month')
         .addEventListener('click', () => changeMonth(-1));
 
-    document.getElementById('y-next-month')
-        .addEventListener('click', () => changeMonth(1));
+    document.getElementById('y-next-month').addEventListener('click', () => changeMonth(1));
 
-    document.getElementById('y-range-clear')
-        .addEventListener('click', () => {
-            from.value = '';
-            to.value = '';
-            selectingEnd = false;
+    document.getElementById('y-range-clear').addEventListener('click', () => {
+        from.value = '';
+        to.value = '';
+        selectingEnd = false;
 
-            closeCalendar();
-            updateText();
-            renderCalendar();
-        });
+        closeCalendar();
+        updateText();
+        renderCalendar();
+    });
 
-    document.getElementById('y-range-done')
-        .addEventListener('click', () => {
-            if (from.value && !to.value) {
-                to.value = from.value;
-            }
+    document.getElementById('y-range-done').addEventListener('click', () => {
+        if (from.value && !to.value) {
+            to.value = from.value;
+        }
 
-            selectingEnd = false;
-            closeCalendar();
-            updateText();
-            renderCalendar();
-        });
+        selectingEnd = false;
+        closeCalendar();
+        updateText();
+        renderCalendar();
+    });
 
-    document.addEventListener('click', event => {
-        if (
-            !panel.hidden &&
-            !panel.contains(event.target) &&
-            event.target !== trigger
-        ) {
+    document.addEventListener('click', (event) => {
+        if (!panel.hidden && !panel.contains(event.target) && event.target !== trigger) {
             closeCalendar();
         }
     });

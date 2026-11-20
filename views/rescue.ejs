@@ -1,125 +1,138 @@
 <%- include('header') %>
-<%- include('work-return') %>
 
+<% if (!backSource) { %> <%- include('work-return') %> <% } %>
 <% if (typeof rescueSaved !== 'undefined' && rescueSaved) { %>
-<p class="form-feedback" role="status">Rescue changes saved. You can continue updating care here.</p>
+    <p class="form-feedback" role="status">Rescue changes saved. You can continue updating
+        care here.</p>
 <% } %>
+
 <div class="page-heading">
     <div>
-        <span class="eyebrow">RESCUE CARE</span>
         <h1 class="pixel-page-title"><%- include('icon', { name: 'care' }) %>Rescue Management</h1>
-        <p>
-            <%= animal.animalCode %> · <%= animal.appearance %>
-        </p>
+        <p> <%= animal.animalCode %> · <%= animal.appearance %> </p>
     </div>
-
-    <a class="button" href="/animals/<%= animal._id %>">
-        Back to Details
+    <a class="button" href="<%= backSource?.url || '/animals/' + animal._id %>">
+        Back to <%= backSource?.label || 'Details' %>
     </a>
 </div>
-
 <% const closed = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted'; %>
 <% if (error) { %>
-<p class="warning-box" role="alert">
-    <%= error %>
-</p>
+    <p class="warning-box" role="alert"> <%= error %> </p>
 <% } %>
 <% if (stale) { %>
-<a class="button spaced" href="/animals/<%= animal._id %>/rescue">Reload and Review</a>
+    <a class="button spaced" href="/animals/<%= animal._id %>/rescue<%= carryReturn %>">Reload and
+        Review</a>
 <% } %>
 <% if (closed) { %>
-<p class="form-feedback">This case is closed. The record is read-only.</p>
+    <p class="form-feedback">This case is closed. The record is read-only.</p>
 <% } %>
+
 <div class="form-layout rescue-form-layout">
     <section class="panel">
         <h2 class="icon-heading">
-            <span class="heading-icon"><%- include('icon', { name: 'home' }) %></span>Assignment & Placement
+            <span class="heading-icon">
+                <%- include('icon', { name: 'home' }) %>
+            </span>
+            Assignment & Placement
         </h2>
-
-        <form method="POST" action="/animals/<%= animal._id %>/rescue">
+        <form method="POST" action="/animals/<%= animal._id %>/rescue<%= carryReturn %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
             <input type="hidden" name="expectedUpdatedAt" value="<%= expectedUpdatedAt %>">
-            <p class="field-hint">Fields marked * are required. Requirements update with rescue progress.</p>
+            <p class="field-hint">Fields marked * are required. Requirements update with
+                rescue progress.</p>
             <fieldset <%= closed || stale ? 'disabled' : '' %>>
                 <div class="form-grid">
-                    <label>
-                        Rescue Progress <em aria-hidden="true">*</em>
+                    <label> Rescue Progress <em aria-hidden="true">*</em>
                         <select name="rescueStatus" required>
-                            <% Object.entries(labels.rescueStatuses).forEach(([value, label]) => { %>
-                            <option value="<%= value %>"
-                                <%= animal.rescueStatus === value ? 'selected' : '' %>>
-                                <%= label %>
-                            </option>
+                            <%
+                                Object.entries(labels.rescueStatuses).forEach(
+                                    ([value, label]) => {
+                            %>
+                                <option
+                                    value="<%= value %>"
+                                    <%=
+                                        animal.rescueStatus === value ? 'selected' : ''
+                                    %>
+                                > <%= label %>
+                                </option>
                             <% }) %>
                         </select>
                     </label>
-
-                    <label>
-                        Assigned To
-                        <em data-required-mark="assignedTo" aria-hidden="true"
-                            <%= ['rescuing', 'placed'].includes(animal.rescueStatus) ? '' : 'hidden' %>>*</em>
+                    <label> Assigned To <em data-required-mark="assignedTo"
+                            aria-hidden="true" <%=
+                                ['rescuing', 'placed'].includes(animal.rescueStatus)
+                                    ? ''
+                                    : 'hidden'
+                            %>>*</em>
                         <select name="assignedTo" aria-describedby="assignee-hint"
-                            <%= ['rescuing', 'placed'].includes(animal.rescueStatus) ? 'required' : '' %>>
+                            <%=
+                                ['rescuing', 'placed'].includes(animal.rescueStatus)
+                                    ? 'required'
+                                    : ''
+                            %>>
                             <option value="">Unassigned</option>
-
                             <% users.forEach(user => { %>
-                            <option value="<%= user._id %>"
-                                <%= String(animal.assignedTo || '') === String(user._id) ? 'selected' : '' %>>
-                                <%= user.displayName %>
-                            </option>
+                                <option
+                                    value="<%= user._id %>"
+                                    <%=
+                                        String(animal.assignedTo || '') === String(user._id)
+                                                ? 'selected'
+                                                : ''
+                                    %>
+                                > <%= user.displayName %>
+                                </option>
                             <% }) %>
                         </select>
-                        <small class="field-hint" id="assignee-hint">Required for In Rescue and Placed.</small>
+                        <small class="field-hint" id="assignee-hint">Required for In
+                            Rescue and Placed.</small>
                     </label>
-
-                    <label class="full">
-                        Placement Location
-                        <em data-required-mark="placementLocation" aria-hidden="true"
+                    <label class="full"> Placement Location <em
+                            data-required-mark="placementLocation" aria-hidden="true"
                             <%= animal.rescueStatus === 'placed' ? '' : 'hidden' %>>*</em>
                         <input name="placementLocation" value="<%= animal.placementLocation || '' %>"
-                            placeholder="Clinic, shelter or temporary placement" maxlength="200"
-                            aria-describedby="placement-hint"
-                            <%= animal.rescueStatus === 'placed' ? 'required' : '' %>>
-                        <small class="field-hint" id="placement-hint">Required when the rescue progress is Placed.</small>
+                            placeholder="Clinic, shelter or temporary placement"
+                            maxlength="200"
+                            aria-describedby="placement-hint" <%= animal.rescueStatus === 'placed' ? 'required' : '' %>>
+                        <small class="field-hint" id="placement-hint">Required when the
+                            rescue progress is Placed.</small>
                     </label>
                 </div>
-
                 <div class="form-bottom">
                     <p>Rescue progress moves forward. Closed records are read-only.</p>
-
                     <div class="actions">
-                        <a class="button" href="/animals/<%= animal._id %>"><%- include('icon', { name: 'back' }) %>
-                            Cancel
-                        </a>
-
-                        <button class="primary" type="submit">
-                            Save Rescue Changes
+                        <a
+                            class="button"
+                            href="<%= backSource?.url || '/animals/' + animal._id %>"
+                        ><%- include('icon', { name: 'back' }) %> Cancel </a>
+                        <button class="primary" type="submit"> Save Rescue Changes
                         </button>
                     </div>
                 </div>
             </fieldset>
         </form>
     </section>
-
     <aside class="panel form-aside">
         <span class="aside-symbol"><%- include('icon', { name: 'care' }) %></span>
         <h2>Before You Save</h2>
-
-        <p>
-            Assign the person coordinating care, then record where the animal is staying.
+        <p> Assign the person coordinating care, then record where the animal is staying.
         </p>
-
         <ol class="steps">
-            <li><strong>Pending Rescue</strong><br>Assignment and placement are optional.</li>
-            <li><strong>In Rescue</strong><br>Choose a responsible staff member.</li>
-            <li><strong>Placed</strong><br>Staff member and placement are required.</li>
+            <li>
+                <strong>Pending Rescue</strong>
+                <br>Assignment and placement are optional.
+            </li>
+            <li>
+                <strong>In Rescue</strong>
+                <br>Choose a responsible staff member.
+            </li>
+            <li>
+                <strong>Placed</strong>
+                <br>Staff member and placement are required.
+            </li>
         </ol>
-
         <% if (!closed) { %>
-        <a class="button" href="/animals/<%= animal._id %>/followups/new">
-            ＋ Add Follow-up
-        </a>
+            <a class="button" href="/animals/<%= animal._id %>/followups/new"> ＋ Add Follow-up
+            </a>
         <% } %>
     </aside>
 </div>

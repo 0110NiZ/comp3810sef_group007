@@ -192,3 +192,13 @@ The `services/animal-codes.js` module provides sequential display codes; the
 `scripts/migrate-animal-codes.js` utility migrates legacy codes. MongoDB `_id`
 references stay unchanged. The Atlas `one_current_adoption` partial unique index
 allows at most one non-cancelled adoption per animal, including completed adoptions.
+
+### Animal lookup and follow-up dates
+
+Animal Records accepts a complete animal code, including lowercase input. The
+same filter is available on `GET /api/animals?animalCode=AR-2026-0001`.
+Follow-up forms and API writes accept an optional `nextFollowUpDate` in
+`YYYY-MM-DD` format. The newest entry sets the schedule for an open animal.
+Leaving its date blank clears the reminder. Omitting the field in an API
+edit preserves its previous value. The dashboard shows due and overdue
+follow-ups using the Hong Kong calendar date.

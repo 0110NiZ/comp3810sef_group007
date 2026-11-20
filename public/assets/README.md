@@ -8,7 +8,7 @@ All files are served locally; there are no runtime asset CDN dependencies.
 | --- | --- | --- | --- |
 | Tiny Town | [Kenney](https://kenney.nl/assets/tiny-town) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | Selected unchanged 16px tiles arranged into cottage.svg and landscape.svg; scaled with nearest-neighbour rendering. |
 | Pixel UI Pack | [Kenney](https://kenney.nl/assets/pixel-ui-pack) | CC0 1.0 | Ancient/tan.png copied as vendor/kenney-ui/panel.png; used as a nine-slice panel border. |
-| [LPC] Cats and Dogs | [bluecarrot16](https://opengameart.org/content/lpc-cats-and-dogs) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Original cat.png and dog.png sprite sheets retained. Selected static frames are scaled/clipped in companions.svg, landscape.svg and icons.svg; no source pixels repainted. |
+| [LPC] Cats and Dogs | [bluecarrot16](https://opengameart.org/content/lpc-cats-and-dogs) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | Original cat.png and dog.png sprite sheets retained. Record portraits use four coat variants with alternating side views. Selected static frames are scaled/clipped in companions.svg, landscape.svg and icons.svg; no source pixels repainted. |
 | Pixelarticons | [Gerrit Halfmann](https://github.com/halfmage/pixelarticons) | MIT | Selected SVG paths bundled into public/icons.svg under existing semantic IDs; colors inherit the interface. Original SVG files and ID mapping retained. |
 
 ## Included notices and source files
