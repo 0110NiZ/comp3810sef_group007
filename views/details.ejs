@@ -2,24 +2,30 @@
 
 <% const closed = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted'; %>
 
-<div class="page-heading">
+<a class="case-back" href="<%= source.url %>">
+    ← Back to <%= source.label === 'List' ? 'Animal Records' : source.label %>
+</a>
+<header class="case-identity">
+    <span class="detail-pet"><%- include('pet-avatar', { animal }) %></span>
     <div>
-        <div class="animal-title">
-            <span class="detail-pet animal-avatar-<%= animal.animalType %>">
-                <%- include('pet-avatar', { animal }) %>
+        <div class="case-title-line">
+            <h1><%= animal.animalCode %></h1>
+            <button type="button" class="copy-code" data-copy="<%= animal.animalCode %>"
+                aria-label="Copy animal code" title="Copy animal code">
+                <svg viewBox="0 0 20 20" width="20" height="20" fill="none"
+                    stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="7" y="2" width="10" height="13" rx="1"/>
+                    <path d="M4 6H2v12h10v-1"/>
+                </svg>
+            </button>
+            <span class="badge status-<%= animal.rescueStatus %>">
+                <%= labels.rescueStatuses[animal.rescueStatus] %>
             </span>
-            <h1>Animal Details</h1>
         </div>
-        <div class="record-code">
-            <code> <%= animal.animalCode %> </code>
-            <button type="button" data-copy="<%= animal.animalCode %>">Copy Code</button>
-        </div>
-        <p>
-            Registered: <%= formatDate(animal.createdAt) %> · Updated: <%= formatDate(animal.updatedAt) %>
-        </p>
+        <p><%= animal.appearance %></p>
+        <p class="muted">Updated: <%= formatDate(animal.updatedAt) %></p>
     </div>
-    <a class="button" href="<%= source.url %>">Back to <%= source.label %></a>
-</div>
+</header>
 <% if (closed) { %>
     <p class="form-feedback" role="status">
         <%- include('icon', { name: 'lock' }) %>This case is closed. The archived
@@ -40,7 +46,7 @@
             <span class="heading-icon">
                 <%- include('icon', { name: 'paw' }) %>
             </span>
-            Basic Information
+            Animal Information
         </h2>
         <dl>
             <dt>Animal Type</dt>
@@ -49,18 +55,20 @@
             <dd> <%= animal.appearance %> </dd>
             <dt>Found Location</dt>
             <dd> <%= animal.foundLocation %> </dd>
-            <dt class="icon-heading"><%- include('icon', { name: 'care' }) %>Health Condition</dt>
+            <dt>Health Condition</dt>
             <dd> <%= animal.healthStatus %> </dd>
             <dt>Contact Name</dt>
             <dd> <%= animal.contactName %> </dd>
             <dt>Phone Number</dt>
             <dd> <%= animal.contactPhone %> </dd>
+            <dt>Registered</dt>
+            <dd><%= formatDate(animal.createdAt) %></dd>
             <dt>Registered By</dt>
             <dd> <%= userName(animal.createdBy) %> </dd>
         </dl>
         <% if (!closed) { %>
             <a
-                class="button"
+                class="case-edit"
                 href="/animals/<%= animal._id %>/edit<%= returnQuery('case-summary') %>"
             >Edit Details</a>
         <% } %>
@@ -71,15 +79,9 @@
             <span class="heading-icon">
                 <%- include('icon', { name: 'care' }) %>
             </span>
-            Rescue & Adoption Status
+            Rescue & Adoption
         </h2>
         <dl>
-            <dt>Rescue Progress</dt>
-            <dd>
-                <span class="badge status-<%= animal.rescueStatus %>">
-                    <%= labels.rescueStatuses[animal.rescueStatus] %>
-                </span>
-            </dd>
             <dt>Assigned To</dt>
             <dd> <%= unassigned ? 'Unassigned' : userName(animal.assignedTo) %> </dd>
             <dt>Placement Location</dt>
@@ -102,10 +104,9 @@
         <% if (!closed) { %>
             <div class="actions">
                 <a
-                    class="button"
+                    class="button primary"
                     href="/animals/<%= animal._id %>/rescue<%= returnQuery('case-summary') %>"
-                >Rescue
-                    Management</a>
+                ><%= unassigned ? 'Assign Staff' : 'Update Rescue' %></a>
                 <a
                     class="button"
                     href="/animals/<%= animal._id %>/adoption<%= returnQuery('case-summary') %>"

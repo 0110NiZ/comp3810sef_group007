@@ -113,7 +113,9 @@
                     <details class="account-menu">
                         <summary class="user-chip"
                             aria-label="Account menu for <%= currentUser.displayName %>">
-                            <span class="avatar profile-avatar"><%- include('icon', { name: 'user' }) %></span>
+                            <span class="avatar profile-avatar">
+                                <img src="/assets/staff-portrait.svg" alt="">
+                            </span>
                             <span><%= currentUser.displayName %></span>
                             <span aria-hidden="true">▾</span>
                         </summary>

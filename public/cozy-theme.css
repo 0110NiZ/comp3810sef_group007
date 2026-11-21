@@ -850,38 +850,11 @@ button:not(:disabled):active,
     box-shadow: 2px 2px 0 #dce1bc;
 }
 
-/* Adoption actions follow the current stage, with a compact summary beside them. */
-.adoption-stages {
+.adoption-record-heading {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    list-style: none;
-    padding: 0;
-    margin: 0 0 22px;
-}
-
-.adoption-stages li {
-    display: flex;
     align-items: center;
-    gap: 10px;
-    color: #726b5b;
-    padding: 10px 16px;
-    border: 2px solid #ded3b8;
-    background: #fffdf7;
-}
-
-.adoption-stages li.current {
-    background: #e5edc9;
-    border-color: #799258;
-    color: #354e37;
-    font-weight: 700;
-}
-
-.adoption-stages li.done {
-    color: #426d4b;
-}
-.adoption-stages li span {
-    font-weight: 700;
+    gap: .5rem;
 }
 
 .adoption-readiness {
@@ -915,13 +888,6 @@ button:not(:disabled):active,
 }
 
 @media (max-width: 600px) {
-    .adoption-stages {
-        gap: 7px;
-    }
-    .adoption-stages li {
-        padding: 8px;
-        font-size: 12px;
-    }
     .open-adoption-form {
         padding: 16px;
     }
@@ -2055,52 +2021,6 @@ body[data-page="home"] .topbar {
     height: 1.5rem;
 }
 
-.my-work {
-    max-width: 56rem;
-    margin-top: 1.25rem;
-}
-
-.my-work-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.my-work-link {
-    display: grid;
-    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: .85rem;
-    min-width: 0;
-    padding: 1rem;
-    border: 2px solid #ddcfb8;
-    background: #fffaf0;
-    box-shadow: 3px 3px #d9ccb0;
-    color: inherit;
-    text-decoration: none;
-}
-
-.my-work-link:hover,
-.my-work-link:focus-visible {
-    background: #f2f6dc;
-    text-decoration: none;
-}
-
-.my-work-link > span:nth-child(2) > * {
-    display: block;
-}
-
-.my-work-link strong {
-    color: #453b30;
-    font-size: 1rem;
-}
-
-.my-work-link > span:nth-child(2) > span {
-    margin-top: .25rem;
-    color: #746957;
-}
-
 .my-work-count {
     min-width: 2rem;
     padding: .35rem .55rem;
@@ -2175,27 +2095,17 @@ body[data-page="home"] .topbar {
 }
 
 .followup-entry .work-record-heading h2 {
-    font-size: .95rem;
-    color: #746957;
+    font-size: 1.2rem;
+    color: var(--ink);
 }
 
 .followup-entry .work-record-heading .badge {
-    display: none;
+    margin-left: 0;
 }
 
-.followup-entry .archive-label {
-    position: absolute;
-    top: 1.4rem;
-    right: 1.6rem;
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .4rem .65rem;
-    border: 1px solid #d4dfaa;
-    background: #eef3d8;
-    color: #4f6b43;
-    font-weight: 700;
-    white-space: nowrap;
+.followup-entry.archived-record .badge {
+    background: #e4edcf;
+    color: #345338;
 }
 
 .followup-entry .journal-meta {
@@ -2266,13 +2176,10 @@ body[data-page="home"] .topbar {
     height: 2.5rem;
 }
 
-.adoption-empty-cat .pixel-icon,
-.adoption-empty-dog .pixel-icon {
-    width: 4.4rem;
-    height: 4.4rem;
-    padding: .35rem;
-    border: 2px solid #ddcfb8;
-    background: #fff4d9;
+.adoption-empty-art img {
+    width: 10rem;
+    max-height: 5.5rem;
+    image-rendering: pixelated;
 }
 
 .adoption-empty h2 {
@@ -2305,10 +2212,6 @@ body[data-page="home"] .topbar {
 }
 
 @media (max-width: 650px) {
-    .my-work-links {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .rescue-case {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -2345,4 +2248,203 @@ body[data-page="home"] .topbar {
         min-height: 22rem;
         padding: 1.25rem;
     }
+}
+
+/* Page cards use a light frame; the workspace search has its own panel. */
+#case-summary > .panel,
+.panel.employee-profile,
+.panel.my-work,
+.work-record.rescue-case,
+.work-record.followup-entry,
+.panel.adoption-empty {
+    border: 1px solid #d5c8af;
+    border-image: none;
+    border-radius: .45rem;
+    background: #fffcf6;
+    box-shadow: 0 2px 3px #614a2712;
+}
+
+.case-back, .case-edit, .followup-entry .text-link {
+    color: #385d40;
+    font-weight: 650;
+}
+.case-edit, .followup-entry .text-link {
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+.case-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin: 1.6rem 0;
+}
+.case-identity > div {
+    min-width: 0;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--line);
+    overflow-wrap: anywhere;
+}
+.case-identity .detail-pet {
+    flex: 0 0 auto;
+    width: 4.5rem;
+    height: 4.5rem;
+}
+.case-title-line, .profile-password {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+}
+.case-title-line h1, .profile-password h2 {
+    margin: 0;
+}
+.case-title-line .copy-code {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: .35rem;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.case-identity p { margin: .45rem 0; }
+.case-navigation, .work-tabs {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0;
+}
+.case-navigation a, .work-tabs .button {
+    margin: 0;
+    padding: .65rem .9rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    box-shadow: none;
+    color: var(--ink);
+}
+.case-navigation a[aria-current], .work-tabs .button.primary {
+    background: transparent;
+    border-color: #446f48;
+    color: #335c39;
+}
+#case-summary[hidden], #care-journal[hidden], #adoption-history[hidden],
+#record-actions[hidden] { display: none; }
+#case-summary .case-edit { align-self: flex-start; margin-top: auto; }
+@media (min-width: 1001px) {
+    #case-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.account-edit {
+    max-width: 37rem;
+}
+.profile-password {
+    margin-top: auto;
+    justify-content: space-between;
+}
+.profile-heading { justify-content: flex-start; }
+.profile-heading p { margin: .2rem 0 .4rem; }
+.staff-portrait {
+    width: 5.5rem;
+    height: 5.5rem;
+    padding: .45rem;
+    border: 1px solid #d8caaf;
+    background: #fff3d7;
+    image-rendering: pixelated;
+}
+.user-chip .avatar img { width: 80%; image-rendering: pixelated; }
+.profile-phone {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1rem 0;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--line);
+}
+.profile-phone dd { margin: 0; }
+.account-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+    gap: 1.25rem;
+}
+.account-overview .panel { max-width: none; }
+.account-overview .my-work, .account-overview .employee-profile { margin-top: 0; }
+.account-overview .employee-profile {
+    display: flex;
+    flex-direction: column;
+}
+.account-overview .profile-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+}
+.profile-heading > .button { align-self: start; }
+.account-work-heading, .account-note-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+}
+.account-note-meta { margin: 1rem 0 .25rem; }
+.account-note-preview { margin: 0; }
+.account-work-section { margin-top: 1rem; }
+.account-work-section + .account-work-section {
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+}
+.account-work-section h3 {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+}
+.account-work-section .my-work-count { font-size: .8rem; }
+.account-cases { list-style: none; padding: 0; margin: 0 0 .8rem; }
+.account-cases li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .7rem;
+    padding: .6rem 0;
+    overflow-wrap: anywhere;
+}
+.account-cases li + li { border-top: 1px solid var(--line); }
+.account-note-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+@media (max-width: 1000px) {
+    .account-overview { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+    .account-overview .profile-heading { grid-template-columns: auto minmax(0, 1fr); }
+    .profile-heading > .button { grid-column: 1 / -1; justify-self: start; }
+    .account-cases li { grid-template-columns: auto minmax(0, 1fr); }
+    .account-cases .badge { grid-column: 2; justify-self: start; }
+}
+.area-rescue .work-records, .area-followups .journal-feed {
+    grid-template-columns: minmax(0, 1fr);
+}
+.area-followups .journal-feed, .panel.adoption-empty {
+    width: 100%;
+    max-width: none;
+}
+.area-followups .journal-feed { padding-left: 0; border-left: none; }
+.followup-entry .journal-meta { margin-top: .4rem; }
+.followup-entry .journal-meta .icon { width: 1em; height: 1em; vertical-align: middle; }
+.rescue-case .work-record-heading p { margin: .3rem 0 0; overflow-wrap: anywhere; }
+.rescue-case .work-record-heading h2 a { color: var(--ink); }
+.rescue-case:has(> .form-feedback) .work-record-actions,
+.rescue-case:has(> .form-feedback) .work-facts { grid-row: auto; }
+@media (max-width: 650px) {
+    .case-identity { gap: .65rem; }
+    .case-identity > div { padding-left: .65rem; }
+    .case-title-line h1 { font-size: 1.45rem; }
+    .rescue-case .work-record-heading .badge { margin-left: 0; }
 }

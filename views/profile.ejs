@@ -6,87 +6,111 @@
     </h1>
 </div>
 
-<section class="panel employee-profile">
-    <% if (editing) { %>
-        <% if (error) { %>
-            <p class="warning-box" role="alert"><%= error %></p>
-        <% } %>
-        <form method="POST" action="/profile">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="form-grid">
-                <label>Display Name <em>*</em>
-                    <input name="displayName" value="<%= profile.displayName %>" required maxlength="80"
-                        autocomplete="name">
-                </label>
-                <label>Phone Number
-                    <input type="tel" name="phone" value="<%= profile.phone || '' %>" maxlength="30"
-                        autocomplete="tel" placeholder="Work contact number">
-                </label>
+<div class="<%= editing ? 'account-edit' : 'account-overview' %>">
+    <section class="panel employee-profile">
+        <% if (editing) { %>
+            <% if (error) { %>
+                <p class="warning-box" role="alert"><%= error %></p>
+            <% } %>
+            <form method="POST" action="/profile">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-grid">
+                    <label>Display Name <em>*</em>
+                        <input name="displayName" value="<%= profile.displayName %>" required maxlength="80"
+                            autocomplete="name">
+                    </label>
+                    <label>Phone Number
+                        <input type="tel" name="phone" value="<%= profile.phone || '' %>" maxlength="30"
+                            autocomplete="tel" placeholder="Work contact number">
+                    </label>
+                </div>
+                <div class="actions spaced">
+                    <a class="button" href="/profile">Cancel</a>
+                    <button type="submit" class="primary">
+                        <%- include('icon', { name: 'check' }) %> Save Changes
+                    </button>
+                </div>
+            </form>
+        <% } else { %>
+            <% if (success) { %>
+                <p role="status" class="form-feedback"><%= success %></p>
+            <% } %>
+            <div class="profile-heading">
+                <img class="staff-portrait" src="/assets/staff-portrait.svg" alt="">
+                <div>
+                    <h2><%= profile.displayName %></h2>
+                    <p>@<%= profile.username %></p>
+                    <span class="badge status-placed">
+                        <%= profile.role === 'admin' ? 'Administrator' : 'Staff' %>
+                    </span>
+                </div>
+                <a class="button primary" href="/profile?edit=1">Edit Profile</a>
             </div>
-            <div class="actions spaced">
-                <a class="button" href="/profile">Cancel</a>
-                <button type="submit" class="primary">
-                    <%- include('icon', { name: 'check' }) %> Save Changes
-                </button>
-            </div>
-        </form>
-    <% } else { %>
-        <div class="section-heading profile-heading">
-            <span class="profile-avatar" aria-hidden="true">
-                <%- include('icon', { name: 'user' }) %>
-            </span>
-            <div>
-                <h2><%= profile.displayName %></h2>
-                <% if (success) { %>
-                    <span role="status"><%= success %></span>
-                <% } %>
-            </div>
-        </div>
-        <dl class="employee-fields">
-            <div>
-                <dt>Username</dt>
-                <dd><%= profile.username %></dd>
-            </div>
-            <div>
-                <dt>Role</dt>
-                <dd><%= profile.role === 'admin' ? 'Administrator' : 'Staff' %></dd>
-            </div>
-            <div>
+            <dl class="profile-phone">
                 <dt>Phone Number</dt>
                 <dd><%= profile.phone || 'Not provided' %></dd>
+            </dl>
+            <div class="profile-password">
+                <h2 class="icon-heading"><%- include('icon', { name: 'lock' }) %>Password</h2>
+                <a class="button" href="/password">Change Password</a>
             </div>
-        </dl>
-        <div class="actions">
-            <a class="button primary" href="/profile?edit=1">Edit Profile</a>
-            <a class="button" href="/password">Change Password</a>
-        </div>
-    <% } %>
-</section>
-
-<% if (!editing) { %>
-    <section class="panel my-work" aria-labelledby="my-work-title">
-        <h2 class="icon-heading" id="my-work-title">
-            <%- include('icon', { name: 'notes' }) %>My Work
-        </h2>
-        <div class="my-work-links">
-            <a class="my-work-link" href="/rescue-management?assignedTo=me">
-                <span class="heading-icon"><%- include('icon', { name: 'care' }) %></span>
-                <span>
-                    <strong>Assigned to Me</strong>
-                    <span>Open rescue cases I am responsible for</span>
-                </span>
-                <span class="my-work-count"><%= workCounts.assignedAnimalCount %></span>
-            </a>
-            <a class="my-work-link" href="/followup-records?tab=mine">
-                <span class="heading-icon"><%- include('icon', { name: 'notes' }) %></span>
-                <span>
-                    <strong>My Follow-ups</strong>
-                    <span>Follow-up notes I have recorded</span>
-                </span>
-                <span class="my-work-count"><%= workCounts.followUpCount %></span>
-            </a>
-        </div>
+        <% } %>
     </section>
-<% } %>
+
+    <% if (!editing) { %>
+        <section class="panel my-work" aria-labelledby="my-work-title">
+            <h2 class="icon-heading" id="my-work-title">
+                <%- include('icon', { name: 'notes' }) %>My Work
+            </h2>
+            <section class="account-work-section">
+                <div class="account-work-heading">
+                    <h3>Assigned to Me<% if (assignedAnimals.length) { %>
+                        <span class="my-work-count"><%= assignedAnimals.length %></span>
+                    <% } %></h3>
+                    <% if (assignedAnimals.length) { %>
+                        <a class="button" href="/rescue-management?assignedTo=me" aria-label="View all assigned cases">View All</a>
+                    <% } else { %>
+                        <span class="muted">No open cases</span>
+                    <% } %>
+                </div>
+                <% if (assignedAnimals.length) { %>
+                    <ul class="account-cases">
+                        <% for (const animal of assignedAnimals) { %>
+                            <li>
+                                <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
+                                <div>
+                                    <a href="/animals/<%= animal._id %>"><%= animal.animalCode %></a>
+                                    <div class="muted"><%= animal.appearance %></div>
+                                </div>
+                                <span class="badge status-<%= animal.rescueStatus %>">
+                                    <%= labels.rescueStatuses[animal.rescueStatus] %>
+                                </span>
+                            </li>
+                        <% } %>
+                    </ul>
+                <% } %>
+            </section>
+            <section class="account-work-section">
+                <div class="account-work-heading">
+                    <h3>My Follow-ups <span class="my-work-count"><%= followUpCount %></span></h3>
+                    <a class="button" href="/followup-records?tab=mine" aria-label="View all my follow-ups">View All</a>
+                </div>
+                <% if (latestFollowUp) { %>
+                    <p class="account-note-meta">
+                        <% if (latestFollowUp.animalId) { %>
+                            <a href="/animals/<%= latestFollowUp.animalId._id %>#care-journal"><%= latestFollowUp.animalId.animalCode %></a>
+                        <% } else { %>
+                            Animal unavailable
+                        <% } %>
+                        <span class="muted"><%= formatDate(latestFollowUp.createdAt) %></span>
+                    </p>
+                    <p class="account-note-preview"><%= latestFollowUp.content %></p>
+                <% } else { %>
+                    <p class="muted">No follow-ups yet.</p>
+                <% } %>
+            </section>
+        </section>
+    <% } %>
+</div>
 
 <%- include('footer') %>

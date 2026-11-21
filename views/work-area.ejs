@@ -19,7 +19,9 @@
         <% } %>
     </div>
     <nav class="work-tabs" aria-label="Workspace categories">
-        <% area.tabs.forEach(([key, label]) => { %>
+        <% area.tabs.filter(([key]) =>
+            area.key !== 'followups' || key !== 'new' || tab === 'new'
+        ).forEach(([key, label]) => { %>
             <a
                 class="button <%= tab === key ? 'primary' : '' %>"
                 href="<%= urlFor(key) %>"
@@ -50,8 +52,7 @@
             <% if (area.key === 'adoption' && tab === 'available') { %>
                 <div class="adoption-empty-art" aria-hidden="true">
                     <span class="adoption-empty-heart"><%- include('icon', { name: 'heart' }) %></span>
-                    <span class="adoption-empty-cat"><%- include('icon', { name: 'cat' }) %></span>
-                    <span class="adoption-empty-dog"><%- include('icon', { name: 'dog' }) %></span>
+                    <img src="/assets/companions.svg" alt="">
                 </div>
             <% } %>
             <span class="heading-icon"><%-
@@ -69,7 +70,9 @@
                     ? 'No matching records'
                     : area.key === 'rescue' && tab !== 'archived'
                       ? 'No active cases in this category'
-                      : 'Nothing here yet'
+                      : area.key === 'adoption' && tab === 'available'
+                        ? 'No animals are available for adoption'
+                        : 'Nothing here yet'
             %></h2>
             <p><%=
                 q
@@ -82,7 +85,9 @@
                 <a class="button" href="<%= urlFor('archived') %>">View Archived Cases</a>
                 <a class="button" href="/animals">Browse Animal Records</a>
             <% } else if (area.key === 'adoption' && tab === 'available') { %>
-                <a class="button" href="<%= urlFor('not_open') %>">View not-open cases</a>
+                <a class="button" href="<%= urlFor('not_open') %>">
+                    <%- include('icon', { name: 'care' }) %>View not-open cases
+                </a>
             <% } else { %>
                 <a class="button" href="/animals">Browse Animal Records</a>
             <% } %>
@@ -126,6 +131,19 @@
                 <header class="work-record-heading">
                     <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
                     <div>
+                        <% if (recordType === 'followup-entry') { %>
+                            <h2><%= animal.animalCode %></h2>
+                            <p class="journal-meta">
+                                <%- include('icon', { name: 'user' }) %>
+                                <%= row.recordedBy?.displayName || 'Account unavailable' %>
+                                · <%= formatDate(row.createdAt) %>
+                            </p>
+                        <% } else if (recordType === 'rescue-case') { %>
+                            <h2><a href="/animals/<%= animal._id %><%= returnQuery('record-' + row._id) %>">
+                                <%= animal.animalCode %>
+                            </a></h2>
+                            <p><%= animal.appearance %></p>
+                        <% } else { %>
                         <span class="eyebrow"><%= animal.animalCode %></span>
                         <% if (closed) { %>
                             <span class="archive-label">
@@ -133,6 +151,7 @@
                             </span>
                         <% } %>
                         <h2><%= animal.appearance %></h2>
+                        <% } %>
                     </div>
                     <span
                         class="badge status-<%=
@@ -165,9 +184,6 @@
                         <dd><%= animal.healthStatus %></dd>
                     </dl>
                 <% } else if (area.key === 'followups' && !animalRows) { %>
-                    <p class="journal-meta">
-                        <%= row.recordedBy?.displayName || 'Account unavailable' %> · <%= formatDate(row.createdAt) %>
-                    </p>
                     <p class="journal-content"><%= row.content %></p>
                     <% if (row.nextFollowUpDate) { %>
                         <p>
@@ -211,7 +227,9 @@
                     <% if (area.key === 'rescue' && !closed) { %>
                         <a class="button primary"
                             href="/animals/<%= animal._id %>/rescue<%= returnQuery('record-' + row._id) %>">
-                            <%- include('icon', { name: 'care' }) %>Update Rescue</a>
+                            <%- include('icon', { name: row.assignedTo ? 'care' : 'user-plus' }) %>
+                            <%= row.assignedTo ? 'Update Rescue' : 'Assign Staff' %>
+                        </a>
                         <a class="button"
                             href="/animals/<%= animal._id %>/followups/new<%=
                                 returnQuery('record-' + row._id) %>">

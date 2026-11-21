@@ -409,10 +409,9 @@ function profileView(res, profile, options = {}) {
         editing: Boolean(options.editing || options.error),
         error: options.error || '',
         success: options.success || '',
-        workCounts: options.workCounts || {
-            assignedAnimalCount: 0,
-            followUpCount: 0
-        }
+        assignedAnimals: options.assignedAnimals || [],
+        latestFollowUp: options.latestFollowUp || null,
+        followUpCount: options.followUpCount || 0
     });
 }
 
@@ -425,20 +424,26 @@ app.get('/profile', requireLogin, async (req, res, next) => {
                 activePage: '',
                 message: 'Account not found. Please sign in again.'
             });
-        const [assignedAnimalCount, followUpCount] = await Promise.all([
-            Animal.countDocuments({
+        if (req.query.edit === '1')
+            return profileView(res, profile, { editing: true });
+
+        const myNotes = { recordedBy: req.user._id };
+        const [assignedAnimals, latestFollowUp, followUpCount] = await Promise.all([
+            Animal.find({
                 assignedTo: req.user._id,
                 closedAt: null,
                 adoptionStatus: { $ne: 'adopted' }
-            }),
-            FollowUp.countDocuments({ recordedBy: req.user._id })
+            }).select('animalCode animalType appearance rescueStatus')
+                .sort({ updatedAt: -1, animalCode: 1 }).lean(),
+            FollowUp.findOne(myNotes).select('animalId content createdAt')
+                .sort({ createdAt: -1, _id: -1 }).populate('animalId', 'animalCode').lean(),
+            FollowUp.countDocuments(myNotes)
         ]);
         return profileView(res, profile, {
-            editing: req.query.edit === '1',
             success: req.query.updated === 'password'
                 ? 'Password updated. Other sessions have been signed out.'
                 : req.query.updated === '1' ? 'Profile saved.' : '',
-            workCounts: { assignedAnimalCount, followUpCount }
+            assignedAnimals, latestFollowUp, followUpCount
         });
     } catch (error) {
         return next(error);

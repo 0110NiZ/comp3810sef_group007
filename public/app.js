@@ -57,3 +57,26 @@ if (accountMenu) {
         }
     });
 }
+
+const caseNavigation = document.querySelector('.case-navigation');
+if (caseNavigation) {
+    const links = [...caseNavigation.querySelectorAll('a[href^="#"]')];
+
+    function selectCaseSection() {
+        const target = document.getElementById(location.hash.slice(1));
+        const selected = links.find(link =>
+            document.querySelector(link.hash)?.contains(target)
+        ) || links[0];
+
+        for (const link of links) {
+            document.querySelector(link.hash).hidden = link !== selected;
+            if (link === selected) link.setAttribute('aria-current', 'location');
+            else link.removeAttribute('aria-current');
+        }
+        const adminActions = document.getElementById('record-actions');
+        if (adminActions) adminActions.hidden = selected !== links[0];
+    }
+
+    selectCaseSection();
+    window.addEventListener('hashchange', selectCaseSection);
+}

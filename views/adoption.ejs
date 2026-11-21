@@ -5,7 +5,13 @@
         <h1 class="pixel-page-title">
             <%- include('icon', { name: 'heart' }) %>Adoption Management
         </h1>
-        <p> <%= animal.animalCode %> · Find a suitable home</p>
+        <p class="adoption-record-heading">
+            <span><%= animal.animalCode %></span>
+            <span class="badge status-<%= animal.adoptionStatus %>">
+                <%= labels.adoptionStatuses[animal.adoptionStatus] %>
+            </span>
+            <span>· Find a suitable home</span>
+        </p>
     </div>
     <a class="button" href="/animals/<%= animal._id %>/close<%= returnQuery() %>">View Closure</a>
 </div>
@@ -19,27 +25,6 @@
         <% } %>
     </div>
 <% } %>
-<ol class="adoption-stages" aria-label="Adoption stages">
-    <%
-        ['Open', 'Register', 'Complete'].forEach((label, index) => {
-            const stage =
-                animal.closedAt || animal.adoptionStatus === 'adopted'
-                    ? 2
-                    : animal.adoptionStatus === 'processing'
-                      ? 2
-                      : animal.adoptionStatus === 'available'
-                        ? 1
-                        : 0;
-    %>
-        <li
-            class="<%= index === stage ? 'current' : index < stage ? 'done' : '' %>"
-            <%- index === stage ? 'aria-current="step"' : '' %>
-        >
-            <span><%= index + 1 %></span><%= label %>
-        </li>
-    <% }); %>
-</ol>
-
 <div class="form-layout adoption-workspace">
     <section class="panel">
         <h2> <%=
@@ -210,9 +195,6 @@
             </span>
             Animal Summary
         </h2>
-        <span class="badge status-<%= animal.adoptionStatus %>">
-            <%= labels.adoptionStatuses[animal.adoptionStatus] %>
-        </span>
         <dl>
             <dt>Rescue Progress</dt>
             <dd> <%= labels.rescueStatuses[animal.rescueStatus] %> </dd>
