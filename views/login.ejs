@@ -3,63 +3,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Staff Sign In · Animal Rescue Center</title>
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/icons.css">
-    <link rel="stylesheet" href="/workspace.css">
-    <link rel="stylesheet" href="/cozy-theme.css">
+    <title>Sign in · Animal Rescue Center</title>
+    <link rel="stylesheet" href="/login.css">
 </head>
 <body class="login-body">
     <main class="login-shell">
-        <section class="login-story">
-            <a class="brand" href="/">
-                <span class="brand-mark">
-                    <img src="/assets/cottage.svg" class="login-shelter" alt="">
-                </span>
-                <span> Animal Rescue Center <small>Rescue & Adoption</small>
-                </span>
-            </a>
-            <div>
-                <span class="eyebrow"> A LITTLE CARE. A NEW BEGINNING. </span>
-                <h1> A little care.
-                    <br> A new beginning.
-                </h1>
-                <p> Connect rescue, care and adoption.
-                    <br> Help every animal find a home.
-                </p>
-                <img class="login-companions" src="/assets/companions.svg" alt=""
-                    aria-hidden="true">
+        <section class="login-story" aria-labelledby="center-name">
+            <img class="login-shelter" src="/assets/cottage.svg" width="112" height="72" alt="">
+            <div class="login-intro">
+                <h1 id="center-name">Animal Rescue Center</h1>
+                <p>Track rescues, record care notes and manage adoptions.</p>
             </div>
-            <span class="story-bottom"> Rescue. Care. A place to belong. </span>
+            <img class="login-companions" src="/assets/companions.svg" width="72" height="36" alt="">
         </section>
 
-        <section class="login-form">
-            <h2 class="pixel-page-title"><%- include('icon', { name: 'lock' }) %>Staff Sign In</h2>
-            <p class="muted">Your work makes a difference.</p>
+        <section class="login-form" aria-labelledby="sign-in-title">
+            <h2 id="sign-in-title"><%- include('icon', { name: 'lock' }) %>Sign in</h2>
             <form method="POST" action="/login">
                 <% if (typeof csrfToken === 'string' && csrfToken) { %>
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <% } %>
-                <div class="form-stack">
-                    <label> Username
-                        <input name="username" type="text" autocomplete="username"
-                            placeholder="Enter your username" minlength="3" maxlength="40"
-                            value="<%= typeof username === 'string' ? username : '' %>" required>
-                    </label>
-                    <label> Password
-                        <input name="password" type="password"
-                            autocomplete="current-password"
-                            placeholder="Enter your password" required>
-                    </label>
-                </div>
+                <label>Username
+                    <input name="username" type="text" autocomplete="username"
+                        minlength="3" maxlength="40"
+                        value="<%= typeof username === 'string' ? username : '' %>" required>
+                </label>
+                <label>Password
+                    <input name="password" type="password" autocomplete="current-password" required>
+                </label>
                 <% if (typeof error === 'string' && error) { %>
-                    <div class="form-feedback" role="alert"> <%= error %> </div>
+                    <p class="form-feedback" role="alert"><%= error %></p>
                 <% } %>
-                <p class="login-hint"> Use the account assigned by your administrator.
-                </p>
-                <button class="primary full-button" type="submit"> Sign In </button>
+                <button type="submit">Sign in</button>
             </form>
-            <p class="muted login-hint"> For authorised staff only. </p>
+            <p class="login-hint">Need an account? Ask your administrator.</p>
         </section>
     </main>
 </body>

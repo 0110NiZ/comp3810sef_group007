@@ -1,0 +1,224 @@
+* {
+    box-sizing: border-box;
+}
+
+.login-body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    padding: clamp(16px, 4vw, 48px);
+    background: #fbf7ef;
+    color: #243f29;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.login-shell {
+    width: min(100%, 62.5rem);
+    min-height: 30.6rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    background: #fffcf6;
+    border: 1px solid #bba984;
+    border-radius: 5px;
+    box-shadow: 0 8px 18px #5b492826;
+}
+
+.login-story {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: clamp(26px, 3.1vw, 44px);
+    background: linear-gradient(135deg, #e3eacb, #e8eed7);
+}
+
+.login-shelter,
+.login-companions {
+    display: block;
+    object-fit: contain;
+    height: auto;
+    image-rendering: pixelated;
+}
+
+.login-shelter {
+    width: 8.25rem;
+    margin: -0.5rem 0 1.2rem;
+}
+
+.login-intro h1 {
+    margin: 0;
+    font-size: clamp(25px, 8.5cqi, 40px);
+    line-height: 1.14;
+    letter-spacing: -0.035em;
+}
+
+.login-intro p {
+    margin: 0.95rem 0 0;
+    max-width: 28em;
+    color: #455d40;
+    font-size: clamp(18px, 1.6vw, 21.5px);
+    line-height: 1.38;
+}
+
+.login-companions {
+    align-self: center;
+    width: min(72%, 18.5rem);
+    margin-top: auto;
+}
+
+.login-form {
+    min-width: 0;
+    align-self: center;
+    padding: clamp(30px, 3.5vw, 48px) clamp(26px, 3vw, 42px);
+}
+
+.login-form h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0 0 2.1rem;
+    font-size: 2.15rem;
+    line-height: 1.2;
+}
+
+.login-form .pixel-icon {
+    width: 2.9rem;
+    height: 2.9rem;
+    fill: currentColor;
+    color: #392e21;
+}
+
+.login-form form,
+.login-form label {
+    display: grid;
+}
+
+.login-form form {
+    gap: 1.2rem;
+}
+
+.login-form label {
+    gap: 0.42rem;
+    font-size: 1.2rem;
+    font-weight: 650;
+}
+
+.login-form input,
+.login-form button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 4px;
+    font: inherit;
+}
+
+.login-form input {
+    min-height: 2.95rem;
+    padding: 0.55rem 0.75rem;
+    border: 1.5px solid #bfad8b;
+    background: #fffdfa;
+    color: #342d24;
+    font-size: 1.05rem;
+    font-weight: 400;
+}
+
+.login-form button {
+    margin-top: 0.7rem;
+    min-height: 3.25rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid #294d2d;
+    background: #325d34;
+    color: #fffdf4;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 2px 0 #223f24;
+    cursor: pointer;
+}
+
+.login-form button:hover {
+    background: #2a512d;
+}
+
+.login-form button:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 #223f24;
+}
+
+.login-form :focus-visible {
+    outline: 3px solid #657d49;
+    outline-offset: 3px;
+}
+
+.login-hint {
+    margin: 1.35rem 0 0;
+    color: #68665c;
+    font-size: 1.125rem;
+    line-height: 1.45;
+}
+
+.form-feedback {
+    margin: 0;
+    padding: 0.65rem 0.8rem;
+    border-left: 3px solid #a4513c;
+    background: #fbefe8;
+    color: #783a2d;
+}
+
+@media (max-width: 700px) {
+    .login-shell {
+        max-width: 30rem;
+        min-height: 0;
+        grid-template-columns: 1fr;
+    }
+
+    .login-story {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: end;
+        gap: 0.5rem;
+        padding: 1.4rem;
+    }
+
+    .login-shelter {
+        width: 5.5rem;
+        margin: 0 0 0 -0.3rem;
+    }
+
+    .login-companions {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+        width: min(100%, 7rem);
+    }
+
+    .login-intro {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .login-intro p {
+        margin-top: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .login-form {
+        padding: 1.5rem 1.4rem;
+    }
+
+    .login-form h2 {
+        margin-bottom: 1.4rem;
+        font-size: 1.75rem;
+    }
+
+    .login-form .pixel-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    .login-form label,
+    .login-hint {
+        font-size: 1rem;
+    }
+}
