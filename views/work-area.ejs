@@ -252,7 +252,7 @@
     <% } %>
     <% if (total) { %>
         <nav class="pagination" aria-label="Workspace pages">
-            <span>Page <%= page %> of <%= pageCount %> · 10 per page</span>
+            <span>Page <%= page %> of <%= pageCount %> · <%= pageSize %> per page</span>
             <div>
                 <% if (page > 1) { %>
                     <a class="button" href="<%= urlFor(tab, page - 1) %>">Previous</a>

@@ -16,6 +16,7 @@ const FollowUp = require('./models/FollowUp');
 const User = require('./models/User');
 const app = express();
 const scryptAsync = promisify(scrypt);
+const RECORDS_PER_PAGE = 10;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -1230,8 +1231,6 @@ app.get('/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
 // 03 Y — Overview, filtering and pagination
 const YAnimal = require('./models/Animal');
 
-const Y_PAGE_SIZE = 3;
-
 const Y_SORT_OPTIONS = {
     updated_desc: {
         updatedAt: -1,
@@ -1443,14 +1442,14 @@ async function yQueryAnimals(query) {
 
     total = await YAnimal.countDocuments(mongoFilter);
 
-    const pageCount = Math.max(1, Math.ceil(total / Y_PAGE_SIZE));
+    const pageCount = Math.max(1, Math.ceil(total / RECORDS_PER_PAGE));
 
     const page = Math.min(requestedPage, pageCount);
 
     animals = await YAnimal.find(mongoFilter)
         .sort(Y_SORT_OPTIONS[filters.sort])
-        .skip((page - 1) * Y_PAGE_SIZE)
-        .limit(Y_PAGE_SIZE)
+        .skip((page - 1) * RECORDS_PER_PAGE)
+        .limit(RECORDS_PER_PAGE)
         .lean();
 
     return {
@@ -1459,7 +1458,7 @@ async function yQueryAnimals(query) {
         total,
         page,
         pageCount,
-        pageSize: Y_PAGE_SIZE
+        pageSize: RECORDS_PER_PAGE
     };
 }
 
@@ -1746,7 +1745,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             }
         }
         const total = invalidAnimalCode ? 0 : await model.countDocuments(where);
-        const pageCount = Math.max(1, Math.ceil(total / 10));
+        const pageCount = Math.max(1, Math.ceil(total / RECORDS_PER_PAGE));
         const requested = Number(req.query.page);
         const page =
             Number.isSafeInteger(requested) && requested > 0
@@ -1755,8 +1754,8 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
         let query = model
             .find(where)
             .sort({ createdAt: -1, _id: -1 })
-            .skip((page - 1) * 10)
-            .limit(10);
+            .skip((page - 1) * RECORDS_PER_PAGE)
+            .limit(RECORDS_PER_PAGE);
         if (animalRows) query = query.populate('assignedTo', 'displayName isActive');
         else
             query = query
@@ -1796,6 +1795,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             total,
             page,
             pageCount,
+            pageSize: RECORDS_PER_PAGE,
             urlFor,
             assignedToMe,
             basePath: req.path

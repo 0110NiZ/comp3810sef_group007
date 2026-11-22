@@ -212,7 +212,7 @@
         </table>
     </div>
     <div class="pagination">
-        <span> Total <%= total %> records · 3 per page </span>
+        <span> Total <%= total %> records · <%= pageSize %> per page </span>
         <div>
             <% if (page > 1) { %>
                 <a class="button" href="<%= pageUrl(page - 1) %>"> Previous </a>

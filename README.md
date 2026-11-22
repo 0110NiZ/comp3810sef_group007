@@ -118,7 +118,7 @@ healthConfirmed:true. Cancellation requires confirm:true and cancellationReason;
 requires confirm:true and deletionReason; closure requires confirm:true.
 
 Animal query fields: animalType, foundLocation, rescueStatus, adoptionStatus, dateFrom, dateTo,
-sort, page. Dates use YYYY-MM-DD inclusive Hong Kong days. Page size is 3. Sort accepts
+sort, page. Dates use YYYY-MM-DD inclusive Hong Kong days. Page size is 10, matching the paginated workspace lists. Sort accepts
 updated_desc, updated_asc, created_desc and created_asc. Date, page and enum values are validated.
 
 ## Curl demonstration
