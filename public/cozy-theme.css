@@ -736,19 +736,6 @@ button:not(:disabled):active,
     font-size: 12px;
 }
 
-.work-empty {
-    text-align: center;
-    padding: 48px 24px;
-}
-
-.work-empty .heading-icon {
-    margin: 0 auto 16px;
-}
-
-.work-empty .button {
-    margin: 8px 4px;
-}
-
 .work-return {
     margin-bottom: 20px;
     font-size: 13px;
@@ -1428,19 +1415,6 @@ tbody tr:hover {
     max-width: 100%;
     white-space: normal;
 }
-.work-empty {
-    padding: 24px;
-    max-width: 700px;
-    margin: 0 auto 24px;
-}
-.work-empty .heading-icon {
-    width: 48px;
-    height: 48px;
-}
-.work-empty .heading-icon .pixel-icon {
-    width: 48px;
-    height: 48px;
-}
 .journal-content {
     background: repeating-linear-gradient(#fbf4e4 0, #fbf4e4 27px, #e7dcc4 28px);
     line-height: 28px;
@@ -2086,59 +2060,34 @@ body[data-page="home"] .topbar {
     display: inline-flex;
 }
 
-/* The available adoption tab has a centered, animal-focused empty state. */
-.adoption-empty {
-    min-height: 27rem;
+/* Empty results occupy the same column as their workspace search. */
+.work-empty {
+    width: 100%;
+    min-height: clamp(19rem, 25vw, 24rem);
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 1rem;
+    padding: clamp(1.25rem, 3vw, 3rem);
+    text-align: center;
+}
+.work-empty-art {
+    display: grid;
+    justify-items: center;
+    gap: .65rem;
+    color: #9c7535;
+}
+.area-adoption .work-empty-art { color: #64845b; }
+.work-empty-art .pixel-icon { width: 2.6rem; height: 2.6rem; }
+.work-empty-art img { width: 9rem; height: auto; image-rendering: pixelated; }
+.panel.work-empty > h2, .work-empty > p { margin: 0; }
+.work-empty-actions {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    padding: 2rem;
-    border-radius: 12px;
+    flex-wrap: wrap;
+    gap: .65rem;
 }
-
-.adoption-empty > .heading-icon {
-    display: none;
-}
-
-.adoption-empty-art {
-    position: relative;
-    display: flex;
-    align-items: end;
-    justify-content: center;
-    gap: 1.25rem;
-    width: 12rem;
-    height: 8rem;
-    margin-bottom: .75rem;
-}
-
-.adoption-empty-art .pixel-icon {
-    shape-rendering: crispEdges;
-    image-rendering: pixelated;
-}
-
-.adoption-empty-heart {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    color: #64845b;
-    transform: translateX(-50%);
-}
-
-.adoption-empty-heart .pixel-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-}
-
-.adoption-empty-art img {
-    width: 10rem;
-    max-height: 5.5rem;
-    image-rendering: pixelated;
-}
-
-.adoption-empty h2 {
-    margin: .5rem 0;
-}
+.work-records > .work-record:only-child { grid-column: 1 / -1; }
 
 @media (max-width: 650px) {
     .followup-entry {
@@ -2152,11 +2101,6 @@ body[data-page="home"] .topbar {
     .followup-entry .archive-label {
         font-size: .8rem;
     }
-
-    .adoption-empty {
-        min-height: 22rem;
-        padding: 1.25rem;
-    }
 }
 
 /* Page cards use a light frame; the workspace search has its own panel. */
@@ -2164,7 +2108,7 @@ body[data-page="home"] .topbar {
 .panel.employee-profile,
 .panel.my-work,
 .work-record.followup-entry,
-.panel.adoption-empty {
+.panel.work-empty {
     border: 1px solid #d5c8af;
     border-image: none;
     border-radius: .45rem;
@@ -2344,7 +2288,7 @@ body[data-page="home"] .topbar {
 .area-followups .journal-feed {
     grid-template-columns: minmax(0, 1fr);
 }
-.area-followups .journal-feed, .panel.adoption-empty {
+.area-followups .journal-feed {
     width: 100%;
     max-width: none;
 }

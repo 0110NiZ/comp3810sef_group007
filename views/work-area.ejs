@@ -48,49 +48,44 @@
         <span class="muted"><%= total %> <%= animalRows ? 'animals' : 'records' %></span>
     </form>
     <% if (!rows.length) { %>
-        <section class="panel work-empty <%= area.key === 'adoption' && tab === 'available' ? 'adoption-empty' : '' %>">
-            <% if (area.key === 'adoption' && tab === 'available') { %>
-                <div class="adoption-empty-art" aria-hidden="true">
-                    <span class="adoption-empty-heart"><%- include('icon', { name: 'heart' }) %></span>
-                    <img src="/assets/companions.svg" alt="">
-                </div>
-            <% } %>
-            <span class="heading-icon"><%-
-                include('icon', {
-                    name:
-                        area.key === 'followups'
-                            ? 'notes'
-                            : area.key === 'rescue'
-                              ? 'care'
-                              : 'heart'
-                })
-            %></span>
-            <h2><%=
-                q
-                    ? 'No matching records'
-                    : area.key === 'rescue' && tab !== 'archived'
-                      ? 'No active cases in this category'
-                      : area.key === 'adoption' && tab === 'available'
-                        ? 'No animals are available for adoption'
-                        : 'Nothing here yet'
-            %></h2>
-            <p><%=
-                q
-                    ? 'Try another animal code or description.'
-                    : area.key === 'adoption' && tab === 'available'
-                        ? 'Animals appear here after placement and health confirmation.'
-                        : 'Records will appear here when they reach this stage.'
-            %></p>
-            <% if (area.key === 'rescue') { %>
-                <a class="button" href="<%= urlFor('archived') %>">View Archived Cases</a>
-                <a class="button" href="/animals">Browse Animal Records</a>
-            <% } else if (area.key === 'adoption' && tab === 'available') { %>
-                <a class="button" href="<%= urlFor('not_open') %>">
-                    <%- include('icon', { name: 'care' }) %>View not-open cases
-                </a>
+        <%
+            const emptyRescuing = !q && area.key === 'rescue' && tab === 'rescuing';
+            const availableAdoption = area.key === 'adoption' && tab === 'available';
+            const emptyIcon = { rescue: 'care', followups: 'notes', adoption: 'heart' }[area.key];
+        %>
+        <section class="panel work-empty">
+            <div class="work-empty-art" aria-hidden="true">
+                <%- include('icon', { name: emptyIcon }) %>
+                <img src="/assets/companions.svg" alt="">
+            </div>
+            <% if (q) { %>
+                <h2>No matching records</h2>
+                <p>Try another animal code or description.</p>
+            <% } else if (emptyRescuing) { %>
+                <h2>No animals are currently in rescue</h2>
+            <% } else if (availableAdoption) { %>
+                <h2>No animals are available for adoption</h2>
+                <p>Animals appear here after placement and health confirmation.</p>
             <% } else { %>
-                <a class="button" href="/animals">Browse Animal Records</a>
+                <h2><%= area.key === 'rescue' && tab !== 'archived' ? 'No active cases in this category' : 'Nothing here yet' %></h2>
+                <p>Records will appear here when they reach this stage.</p>
             <% } %>
+            <div class="work-empty-actions">
+                <% if (emptyRescuing) { %>
+                    <a class="button" href="<%= urlFor('pending') %>">
+                        <%- include('icon', { name: 'care' }) %>View pending cases
+                    </a>
+                <% } else if (availableAdoption) { %>
+                    <a class="button" href="<%= urlFor('not_open') %>">
+                        <%- include('icon', { name: 'care' }) %>View not-open cases
+                    </a>
+                <% } else { %>
+                    <% if (area.key === 'rescue' && tab !== 'archived') { %>
+                        <a class="button" href="<%= urlFor('archived') %>">View Archived Cases</a>
+                    <% } %>
+                    <a class="button" href="/animals">Browse Animal Records</a>
+                <% } %>
+            </div>
         </section>
     <% } else if (area.key === 'rescue') { %>
         <%- include('rescue-list') %>
@@ -249,17 +244,19 @@
         <% }) %>
     </div>
     <% } %>
-    <nav class="pagination" aria-label="Workspace pages">
-        <span>Page <%= page %> of <%= pageCount %> · 10 per page</span>
-        <div>
-            <% if (page > 1) { %>
-                <a class="button" href="<%= urlFor(tab, page - 1) %>">Previous</a>
-            <% } %>
-            <% if (page < pageCount) { %>
-                <a class="button" href="<%= urlFor(tab, page + 1) %>">Next</a>
-            <% } %>
-        </div>
-    </nav>
+    <% if (total) { %>
+        <nav class="pagination" aria-label="Workspace pages">
+            <span>Page <%= page %> of <%= pageCount %> · 10 per page</span>
+            <div>
+                <% if (page > 1) { %>
+                    <a class="button" href="<%= urlFor(tab, page - 1) %>">Previous</a>
+                <% } %>
+                <% if (page < pageCount) { %>
+                    <a class="button" href="<%= urlFor(tab, page + 1) %>">Next</a>
+                <% } %>
+            </div>
+        </nav>
+    <% } %>
 </div>
 
 <%- include('footer') %>
