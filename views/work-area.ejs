@@ -92,7 +92,9 @@
                 <a class="button" href="/animals">Browse Animal Records</a>
             <% } %>
         </section>
-    <% } %>
+    <% } else if (area.key === 'rescue') { %>
+        <%- include('rescue-list') %>
+    <% } else { %>
     <div class="work-records <%= area.key === 'followups' && !animalRows ? 'journal-feed' : '' %>">
         <%
             rows.forEach((row) => {
@@ -114,12 +116,7 @@
                     (currentUser.role === 'admin' ||
                         String(row.recordedBy?._id || row.recordedBy) ===
                             String(currentUser._id));
-                const recordType =
-                    area.key === 'rescue'
-                        ? 'rescue-case'
-                        : area.key === 'followups' && !animalRows
-                            ? 'followup-entry'
-                            : '';
+                const recordType = area.key === 'followups' && !animalRows ? 'followup-entry' : '';
         %>
             <article
                 id="record-<%= row._id %>"
@@ -138,11 +135,6 @@
                                 <%= row.recordedBy?.displayName || 'Account unavailable' %>
                                 · <%= formatDate(row.createdAt) %>
                             </p>
-                        <% } else if (recordType === 'rescue-case') { %>
-                            <h2><a href="/animals/<%= animal._id %><%= returnQuery('record-' + row._id) %>">
-                                <%= animal.animalCode %>
-                            </a></h2>
-                            <p><%= animal.appearance %></p>
                         <% } else { %>
                         <span class="eyebrow"><%= animal.animalCode %></span>
                         <% if (closed) { %>
@@ -174,16 +166,7 @@
                                 : labels.rescueStatuses[animal.rescueStatus]
                     %> </span>
                 </header>
-                <% if (area.key === 'rescue') { %>
-                    <dl class="work-facts">
-                        <dt>Rescue Coordinator</dt>
-                        <dd><%= row.assignedTo?.displayName || 'Unassigned' %></dd>
-                        <dt>Placement</dt>
-                        <dd><%= animal.placementLocation || 'Not arranged' %></dd>
-                        <dt>Health</dt>
-                        <dd><%= animal.healthStatus %></dd>
-                    </dl>
-                <% } else if (area.key === 'followups' && !animalRows) { %>
+                <% if (area.key === 'followups' && !animalRows) { %>
                     <p class="journal-content"><%= row.content %></p>
                     <% if (row.nextFollowUpDate) { %>
                         <p>
@@ -224,20 +207,7 @@
                     </p>
                 <% } %>
                 <footer class="actions work-record-actions">
-                    <% if (area.key === 'rescue' && !closed) { %>
-                        <% if (!animal.assignedTo) { %>
-                            <%- include('take-case', { animal, query: returnQuery('record-' + row._id) }) %>
-                        <% } %>
-                        <% if (managesCase(currentUser, animal)) { %>
-                            <a class="button primary" href="/animals/<%= animal._id %>/rescue<%= returnQuery('record-' + row._id) %>">
-                                <%- include('icon', { name: 'care' }) %><%= row.assignedTo ? 'Manage Rescue' : 'Assign coordinator' %>
-                            </a>
-                        <% } %>
-                        <a class="button"
-                            href="/animals/<%= animal._id %>/followups/new<%=
-                                returnQuery('record-' + row._id) %>">
-                            <%- include('icon', { name: 'notes-plus' }) %>Add Follow-up</a>
-                    <% } else if (area.key === 'followups' && animalRows && !closed) { %>
+                    <% if (area.key === 'followups' && animalRows && !closed) { %>
                         <a class="button primary"
                             href="/animals/<%= animal._id %>/followups/new<%=
                                 returnQuery('record-' + row._id) %>">
@@ -278,6 +248,7 @@
             </article>
         <% }) %>
     </div>
+    <% } %>
     <nav class="pagination" aria-label="Workspace pages">
         <span>Page <%= page %> of <%= pageCount %> · 10 per page</span>
         <div>

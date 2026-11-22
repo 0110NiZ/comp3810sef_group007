@@ -1,0 +1,67 @@
+<div class="rescue-list">
+    <table aria-label="Rescue cases">
+        <colgroup><col class="animal-col"><col class="status-col"><col class="facts-col"><col></colgroup>
+        <thead>
+            <tr>
+                <th scope="col">Animal</th>
+                <th scope="col">Rescue status</th>
+                <th scope="col">Case details</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% for (const animal of rows) {
+                const closed = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted';
+                const recordId = 'record-' + animal._id;
+                const path = '/animals/' + animal._id;
+                const query = returnQuery(recordId);
+            %>
+                <tr id="<%= recordId %>">
+                    <td>
+                        <div class="rescue-animal">
+                            <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
+                            <div>
+                                <a class="rescue-code" href="<%= path + query %>"><%= animal.animalCode %></a>
+                                <p><%= animal.appearance %></p>
+                            </div>
+                        </div>
+                        <% if (workNotice?.id === String(animal._id)) { %>
+                            <p class="form-feedback" role="status"><%= workNotice.message %></p>
+                        <% } %>
+                    </td>
+                    <td>
+                        <span class="badge status-<%= animal.rescueStatus %>">
+                            <%= closed ? 'Archived · Read-only' : labels.rescueStatuses[animal.rescueStatus] %>
+                        </span>
+                    </td>
+                    <td>
+                        <dl class="rescue-facts">
+                            <dt>Coordinator</dt><dd><%= animal.assignedTo?.displayName || 'Unassigned' %></dd>
+                            <dt>Placement</dt><dd><%= animal.placementLocation || 'Not arranged' %></dd>
+                            <dt>Health</dt><dd><%= animal.healthStatus %></dd>
+                        </dl>
+                    </td>
+                    <td>
+                        <div class="rescue-actions">
+                            <% if (closed) { %>
+                                <a class="button" href="<%= path + query %>">View Animal Record</a>
+                            <% } else { %>
+                                <% if (!animal.assignedTo) { %>
+                                    <%- include('take-case', { animal, query }) %>
+                                <% } %>
+                                <% if (managesCase(currentUser, animal)) { %>
+                                    <a class="button primary" href="<%= path + '/rescue' + query %>">
+                                        <%- include('icon', { name: 'care' }) %><%= animal.assignedTo ? 'Manage Rescue' : 'Assign coordinator' %>
+                                    </a>
+                                <% } %>
+                                <a class="button" href="<%= path + '/followups/new' + query %>">
+                                    <%- include('icon', { name: 'notes-plus' }) %>Add Follow-up
+                                </a>
+                            <% } %>
+                        </div>
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
