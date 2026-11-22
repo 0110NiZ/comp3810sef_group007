@@ -89,7 +89,7 @@
                 value="<%= filters.dateFrom || '' %>"
             >
             <input type="hidden" name="dateTo" id="y-date-to" value="<%= filters.dateTo || '' %>">
-            <button type="button" id="y-range-trigger" class="y-range-trigger"
+            <button type="button" id="y-range-trigger" class="button y-range-trigger"
                 aria-expanded="false" aria-controls="y-range-calendar"> Select Date Range
             </button>
             <%- include('calendar-panel', { single: false }) %>

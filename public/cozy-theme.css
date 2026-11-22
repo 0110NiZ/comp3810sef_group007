@@ -1103,25 +1103,6 @@ input:disabled {
     gap: 14px;
     align-items: end;
 }
-.filters .y-range-trigger,
-.followup-date .y-range-trigger {
-    min-height: 44px;
-    border: 2px solid #d6c6a8;
-}
-.filters .y-range-calendar button,
-.followup-date .y-range-calendar button {
-    min-height: 28px;
-    box-shadow: none;
-}
-.filters .y-range-calendar button:hover,
-.followup-date .y-range-calendar button:hover {
-    transform: none;
-}
-.filters .y-range-calendar,
-.followup-date .y-range-calendar {
-    border: 2px solid #baa782;
-    border-radius: 2px;
-}
 th {
     background: #e2eac7;
     color: #4e573d;

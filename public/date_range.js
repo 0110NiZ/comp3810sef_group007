@@ -92,7 +92,7 @@
             button.setAttribute('aria-label', date);
             if (single) button.setAttribute('aria-pressed', String(date === from.value));
             if (date === from.value || date === to?.value) {
-                button.classList.add('y-range-edge');
+                button.classList.add('primary');
             } else if (from.value && to?.value && date > from.value && date < to.value) {
                 button.classList.add('y-range-middle');
             }

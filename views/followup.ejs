@@ -103,7 +103,7 @@
                 <label for="y-date-from">Next Follow-up Date (optional)</label>
                 <input type="date" id="y-date-from" name="nextFollowUpDate"
                     value="<%= typeof draftNextDate === 'string' ? draftNextDate : followUp?.nextFollowUpDate || '' %>">
-                <button type="button" id="y-range-trigger" class="y-range-trigger" hidden
+                <button type="button" id="y-range-trigger" class="button y-range-trigger" hidden
                     aria-expanded="false" aria-controls="y-range-calendar">Select date</button>
                 <%- include('calendar-panel', { single: true }) %>
             </div>
