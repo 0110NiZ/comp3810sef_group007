@@ -35,19 +35,24 @@
         <% if (assignedToMe) { %>
             <input type="hidden" name="assignedTo" value="me">
         <% } %>
-        <label>Find an Animal
+        <label>Animal code
             <input name="q" maxlength="100" value="<%= q %>"
-                placeholder="Animal code or description">
+                placeholder="e.g. AR-2026-0005"
+                <% if (invalidAnimalCode) { %>aria-invalid="true" aria-describedby="code-error"<% } %>>
         </label>
         <button class="primary" type="submit">
             <%- include('icon', { name: 'search' }) %>Search
         </button>
-        <a class="button" href="<%= basePath %>?tab=<%= tab %>">
+        <a class="button" href="<%= basePath %>?tab=<%= tab %><%= assignedToMe ? '&assignedTo=me' : '' %>">
             <%- include('icon', { name: 'refresh' }) %>Reset
         </a>
-        <span class="muted"><%= total %> <%= animalRows ? 'animals' : 'records' %></span>
+        <% if (invalidAnimalCode) { %>
+            <p id="code-error" class="work-search-error" role="alert">Enter the full animal code, e.g. AR-2026-0005.</p>
+        <% } else { %>
+            <span class="muted"><%= total %> <%= animalRows ? 'animal' : 'record' %><%= total === 1 ? '' : 's' %></span>
+        <% } %>
     </form>
-    <% if (!rows.length) { %>
+    <% if (!invalidAnimalCode && !rows.length) { %>
         <%
             const emptyRescuing = !q && area.key === 'rescue' && tab === 'rescuing';
             const availableAdoption = area.key === 'adoption' && tab === 'available';
@@ -59,8 +64,7 @@
                 <img src="/assets/companions.svg" alt="">
             </div>
             <% if (q) { %>
-                <h2>No matching records</h2>
-                <p>Try another animal code or description.</p>
+                <h2>No matching record in <%= area.tabs.find(([key]) => key === tab)[1] %>.</h2>
             <% } else if (emptyRescuing) { %>
                 <h2>No animals are currently in rescue</h2>
             <% } else if (availableAdoption) { %>
@@ -71,7 +75,9 @@
                 <p>Records will appear here when they reach this stage.</p>
             <% } %>
             <div class="work-empty-actions">
-                <% if (emptyRescuing) { %>
+                <% if (q) { %>
+                    <a class="button" href="/animals?animalCode=<%= encodeURIComponent(q) %>">Search all animal records</a>
+                <% } else if (emptyRescuing) { %>
                     <a class="button" href="<%= urlFor('pending') %>">
                         <%- include('icon', { name: 'care' }) %>View pending cases
                     </a>
@@ -87,9 +93,9 @@
                 <% } %>
             </div>
         </section>
-    <% } else if (area.key === 'rescue') { %>
+    <% } else if (rows.length && area.key === 'rescue') { %>
         <%- include('rescue-list') %>
-    <% } else { %>
+    <% } else if (rows.length) { %>
     <div class="work-records <%= area.key === 'followups' && !animalRows ? 'journal-feed' : '' %>">
         <%
             rows.forEach((row) => {

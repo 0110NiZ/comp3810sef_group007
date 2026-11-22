@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const pattern = /^AR-(\d{4})-(\d{4,})$/;
+const animalCodePattern = /^AR-(\d{4})-(\d{4,})$/;
 
 function registrationYear(date) {
     return Number(
@@ -68,7 +68,7 @@ async function migrateAnimalCodes() {
         );
         // Reserve all existing short codes, including deleted animals: never reuse them.
         for (const row of ordered) {
-            const match = pattern.exec(row.code || '');
+            const match = animalCodePattern.exec(row.code || '');
             if (match)
                 await counters.updateOne(
                     { _id: Number(match[1]) },
@@ -80,7 +80,7 @@ async function migrateAnimalCodes() {
         }
         let changed = 0;
         for (const row of ordered) {
-            if (pattern.test(row.code || '')) continue;
+            if (animalCodePattern.test(row.code || '')) continue;
             const code = await nextAnimalCode(row.date, session);
             await history.updateOne(
                 { animalId: row.id },
@@ -114,4 +114,4 @@ async function migrateAnimalCodes() {
     });
 }
 
-module.exports = { nextAnimalCode, migrateAnimalCodes, registrationYear };
+module.exports = { animalCodePattern, nextAnimalCode, migrateAnimalCodes, registrationYear };

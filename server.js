@@ -11,7 +11,7 @@ const cookieSession = require('cookie-session');
 const labels = require('./models/constants');
 const { digitsByCode, phoneHint, phoneParts, normalizePhone } = require('./services/phone');
 const Animal = require('./models/Animal');
-const { nextAnimalCode, migrateAnimalCodes } = require('./services/animal-codes');
+const { animalCodePattern, nextAnimalCode, migrateAnimalCodes } = require('./services/animal-codes');
 const FollowUp = require('./models/FollowUp');
 const User = require('./models/User');
 const app = express();
@@ -1699,16 +1699,10 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
         const tab = area.tabs.some(([key]) => key === req.query.tab)
             ? req.query.tab
             : area.defaultTab;
-        const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
-        const literal = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const animalSearch = q
-            ? {
-                  $or: [
-                      { animalCode: { $regex: literal, $options: 'i' } },
-                      { appearance: { $regex: literal, $options: 'i' } }
-                  ]
-              }
-            : {};
+        const q = yReadQuery(req.query, 'q').toUpperCase();
+        if (q.length > 100) throw yError('Animal code must be 100 characters or fewer.');
+        const invalidAnimalCode = Boolean(q) && !animalCodePattern.test(q);
+        const animalSearch = q ? { animalCode: q } : {};
         const open = { closedAt: null, adoptionStatus: { $ne: 'adopted' } };
         const assignedToMe = area.key === 'rescue' && req.query.assignedTo === 'me';
         let model = Animal;
@@ -1737,7 +1731,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             where = { ...animalSearch, ...open };
             if (area.key === 'adoption') where.adoptionStatus = tab;
         } else {
-            const animalIds = await Animal.find(animalSearch).distinct('_id');
+            const animalIds = invalidAnimalCode ? [] : await Animal.find(animalSearch).distinct('_id');
             where = { animalId: { $in: animalIds } };
             if (area.key === 'followups') {
                 model = FollowUp;
@@ -1751,7 +1745,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
                 }
             }
         }
-        const total = await model.countDocuments(where);
+        const total = invalidAnimalCode ? 0 : await model.countDocuments(where);
         const pageCount = Math.max(1, Math.ceil(total / 10));
         const requested = Number(req.query.page);
         const page =
@@ -1771,7 +1765,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
                     area.key === 'followups' ? 'recordedBy' : 'registeredBy',
                     'displayName'
                 );
-        const rows = await query.lean();
+        const rows = total ? await query.lean() : [];
         const urlFor = (nextTab = tab, nextPage = 1) =>
             req.path +
             '?' +
@@ -1790,6 +1784,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             rows.some(row => String(row._id) === notice.id);
         if (showNotice) delete req.session.workNotice;
         return res.render('work-area', {
+            invalidAnimalCode,
             workNotice: showNotice ? notice : null,
             title: area.title,
             activePage: area.key,
@@ -4742,6 +4737,30 @@ async function nRunIntegrationTests() {
             1
         );
         passed('Associated deletion and audit creation roll back together');
+
+        const lookupCode = 'AR-2026-10005';
+        const target = await animal({ animalCode: lookupCode, appearance: 'Exact lookup match' });
+        const decoy = await animal({ animalCode: lookupCode + '0', appearance: lookupCode });
+        for (const record of [target, decoy]) {
+            await FollowUp.create({ animalId: record._id, content: record.appearance, recordedBy: staff._id });
+            await Adoption.create({ animalId: record._id, adopterName: 'Test adopter',
+                adopterPhone: '12345678', registeredBy: staff._id });
+        }
+        for (const path of ['/rescue-management?tab=active', '/followup-records?tab=all',
+            '/adoption-management?tab=processing']) {
+            const exact = await request('GET', path + '&q=%20ar-2026-10005%20');
+            assert.equal(exact.status, 200);
+            assert.ok(exact.text.includes('/animals/' + target._id));
+            assert.ok(!exact.text.includes('/animals/' + decoy._id));
+            for (const input of ['1', '2', 'AR-2026-', 'Exact']) {
+                const partial = await request('GET', path + '&q=' + input);
+                assert.equal(partial.status, 200);
+                assert.ok(partial.text.includes('Enter the full animal code'));
+                assert.ok(!partial.text.includes('/animals/' + target._id));
+                assert.ok(!partial.text.includes('/animals/' + decoy._id));
+            }
+        }
+        passed('Workspace searches require an exact animal code, including for related records');
 
         await User.updateOne(
             {

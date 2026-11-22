@@ -1658,6 +1658,12 @@ button.danger,
     white-space: nowrap;
     padding: 0 0 12px 4px;
 }
+.work-search-error {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    color: #8a352d;
+}
 @media (max-width: 800px) {
     .work-search {
         grid-template-columns: 1fr auto;
