@@ -95,22 +95,18 @@
             <label> Notes <em>*</em>
                 <textarea name="content" rows="7" required maxlength="2000"
                     aria-describedby="notes-hint"
-                    placeholder="Record treatment, care and observations"><%= noteValue %>
-                    </textarea>
+                    placeholder="Record treatment, care and observations"><%= noteValue %></textarea>
                 <small class="field-hint" id="notes-hint">Required · Up to 2,000
                     characters. Include observations, care given and next steps.</small>
             </label>
-            <label class="spaced">Next Follow-up Date (optional)
-                <input
-                    type="date"
-                    name="nextFollowUpDate"
-                    value="<%=
-                        typeof draftNextDate === 'string'
-                                ? draftNextDate
-                                : followUp?.nextFollowUpDate || ''
-                    %>"
-                >
-            </label>
+            <div class="spaced y-date-range-field followup-date">
+                <label for="y-date-from">Next Follow-up Date (optional)</label>
+                <input type="date" id="y-date-from" name="nextFollowUpDate"
+                    value="<%= typeof draftNextDate === 'string' ? draftNextDate : followUp?.nextFollowUpDate || '' %>">
+                <button type="button" id="y-range-trigger" class="y-range-trigger" hidden
+                    aria-expanded="false" aria-controls="y-range-calendar">Select date</button>
+                <%- include('calendar-panel', { single: true }) %>
+            </div>
             <div class="form-bottom">
                 <div class="actions">
                     <a
@@ -126,4 +122,8 @@
     <% } %>
 </section>
 
+<% if (mode !== 'delete') { %>
+    <link rel="stylesheet" href="/date_range.css">
+    <script src="/date_range.js" defer></script>
+<% } %>
 <%- include('footer') %>

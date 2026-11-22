@@ -160,3 +160,7 @@
         width: min(320px, 90vw);
     }
 }
+
+.followup-date { min-width: 0; }
+.followup-date .y-range-trigger { justify-content: flex-start; }
+.followup-date .y-range-calendar { max-width: 100%; }

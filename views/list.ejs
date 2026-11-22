@@ -92,32 +92,7 @@
             <button type="button" id="y-range-trigger" class="y-range-trigger"
                 aria-expanded="false" aria-controls="y-range-calendar"> Select Date Range
             </button>
-            <div id="y-range-calendar" class="y-range-calendar" hidden>
-                <div class="y-range-toolbar">
-                    <button type="button" id="y-prev-month" aria-label="Previous Month"> ‹
-                    </button>
-                    <strong id="y-month-title">
-                    </strong>
-                    <button type="button" id="y-next-month" aria-label="Next Month"> ›
-                    </button>
-                </div>
-                <div class="y-range-weekdays">
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                    <span>Sun</span>
-                </div>
-                <div id="y-calendar-days" class="y-calendar-days">
-                </div>
-                <p id="y-range-hint"> Choose the start date, then the end date </p>
-                <div class="y-range-actions">
-                    <button type="button" id="y-range-clear"> Clear Dates </button>
-                    <button type="button" id="y-range-done"> Done </button>
-                </div>
-            </div>
+            <%- include('calendar-panel', { single: false }) %>
         </div>
         <label> Sort By <select name="sort">
                 <%

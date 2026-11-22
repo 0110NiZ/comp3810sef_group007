@@ -1009,6 +1009,7 @@ async function lCreate(req, res, next) {
             ...values,
             animalCode: await nextAnimalCode(),
             createdBy: req.user._id,
+            updatedBy: req.user._id,
             rescueStatus: 'pending',
             assignedTo: null,
             placementLocation: '',
@@ -1092,6 +1093,7 @@ async function lUpdate(req, res, next) {
             {
                 $set: {
                     ...values,
+                    updatedBy: req.user._id,
                     updatedAt: new Date(
                         Math.max(Date.now(), animal.updatedAt.getTime() + 1)
                     )
@@ -1154,7 +1156,7 @@ app.get('/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
         const originalAnimal = await lLoad(req.params.id);
         const [animal, followUps, adoptionRecords] = await Promise.all([
             LAnimal.findById(req.params.id)
-                .populate('createdBy assignedTo closedBy', 'displayName username')
+                .populate('createdBy assignedTo closedBy updatedBy', 'displayName username')
                 .lean(),
             LFollowUp.find({
                 animalId: req.params.id
@@ -2143,7 +2145,7 @@ async function mUpdateRescue(req) {
             session
         });
         return animal;
-    });
+    }, req.user._id);
 }
 
 function mExpectedVersion(value, timestamp) {
@@ -2275,7 +2277,7 @@ async function mCreateFollowUp(req) {
             }
         );
         return record;
-    });
+    }, req.user._id);
 }
 
 app.post('/animals/:id/followups/new', requireLogin, requireCsrf, async (req, res) => {
@@ -2388,7 +2390,7 @@ async function mUpdateFollowUp(req) {
         }
 
         return updated;
-    });
+    }, req.user._id);
 }
 
 app.post(
@@ -2463,7 +2465,7 @@ async function mDeleteFollowUp(req) {
         }
 
         return deleted;
-    });
+    }, req.user._id);
 }
 
 app.post(
@@ -2622,7 +2624,7 @@ async function nPrepareDatabase() {
     if (old) await models.Adoption.collection.dropIndex(old.name);
     await migrateAnimalCodes();
 }
-async function nTransaction(id, work) {
+async function nTransaction(id, work, updatedBy = null) {
     nId(id);
     nDatabase();
     const hello = await mongoose.connection.db.admin().command({
@@ -2643,6 +2645,7 @@ async function nTransaction(id, work) {
                     _id: id
                 },
                 {
+                    $set: { updatedBy },
                     $inc: {
                         __v: 1
                     }
@@ -2721,7 +2724,7 @@ async function nRead(id) {
         adoptionHistory
     };
 }
-async function nChangeStatus(id, body) {
+async function nChangeStatus(id, body, user) {
     const target = body?.adoptionStatus;
     if (!['available', 'not_open'].includes(target))
         nFail(400, 'VALIDATION_ERROR', 'Only opening or withdrawing adoption is allowed.');
@@ -2772,7 +2775,7 @@ async function nChangeStatus(id, body) {
         return {
             animal: animal.toObject()
         };
-    });
+    }, user._id);
 }
 async function nRegister(id, body, user) {
     const fields = {
@@ -2817,7 +2820,7 @@ async function nRegister(id, body, user) {
             animal: animal.toObject(),
             adoption: adoption.toObject()
         };
-    });
+    }, user._id);
 }
 
 function nAdoptionVersion(body, adoption) {
@@ -2888,7 +2891,7 @@ async function nEditAdoption(id, body, user) {
             animal: animal.toObject(),
             adoption: adoption.toObject()
         };
-    });
+    }, user._id);
 }
 async function nCancelAdoption(id, body, user) {
     const reason = nText(body, 'cancellationReason', 1000);
@@ -2912,7 +2915,7 @@ async function nCancelAdoption(id, body, user) {
             animal: animal.toObject(),
             cancelledAdoption: adoption.toObject()
         };
-    });
+    }, user._id);
 }
 
 async function nClose(id, body, user) {
@@ -2956,7 +2959,7 @@ async function nClose(id, body, user) {
             animal: animal.toObject(),
             adoption: adoption.toObject()
         };
-    });
+    }, user._id);
 }
 async function nDelete(id, body, user) {
     if (user.role !== 'admin')
@@ -3017,7 +3020,7 @@ async function nDelete(id, body, user) {
             deletedFollowUps: followUps.deletedCount,
             deletedAdoptions: adoptions.deletedCount
         };
-    });
+    }, user._id);
 }
 
 function nErrorInfo(error) {

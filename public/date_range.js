@@ -9,8 +9,15 @@
     const title = document.getElementById('y-month-title');
     const hint = document.getElementById('y-range-hint');
 
-    if (!from || !to || !trigger || !panel || !grid || !title || !hint) {
+    const single = from?.type === 'date';
+    if (!from || !trigger || !panel || !grid || !title || (!single && (!to || !hint))) {
         return;
+    }
+
+    if (single) {
+        from.hidden = true;
+        document.querySelector('label[for="y-date-from"]').htmlFor = trigger.id;
+        trigger.hidden = false;
     }
 
     const todayParts = Object.fromEntries(
@@ -25,15 +32,19 @@
     );
 
     const today = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
-    const initialDate = from.value || to.value || today;
+    const initialDate = from.value || to?.value || today;
 
     let [year, month] = initialDate.split('-').map(Number);
-    let selectingEnd = Boolean(from.value && !to.value);
+    let selectingEnd = Boolean(!single && from.value && !to.value);
 
     const pad = (number) => String(number).padStart(2, '0');
     const dateString = (day) => `${year}-${pad(month)}-${pad(day)}`;
 
     function updateText() {
+        if (single) {
+            trigger.textContent = from.value || 'Select date';
+            return;
+        }
         if (from.value && to.value) {
             trigger.textContent = `${from.value} to ${to.value}`;
         } else if (from.value) {
@@ -78,14 +89,20 @@
             button.textContent = day;
             button.className = 'y-calendar-day';
 
-            if (date === from.value || date === to.value) {
+            button.setAttribute('aria-label', date);
+            if (single) button.setAttribute('aria-pressed', String(date === from.value));
+            if (date === from.value || date === to?.value) {
                 button.classList.add('y-range-edge');
-            } else if (from.value && to.value && date > from.value && date < to.value) {
+            } else if (from.value && to?.value && date > from.value && date < to.value) {
                 button.classList.add('y-range-middle');
             }
 
             button.addEventListener('click', () => {
-                if (!selectingEnd) {
+                if (single) {
+                    from.value = date;
+                    closeCalendar();
+                    trigger.focus();
+                } else if (!selectingEnd) {
                     from.value = date;
                     to.value = '';
                     selectingEnd = true;
@@ -135,27 +152,36 @@
 
     document.getElementById('y-range-clear').addEventListener('click', () => {
         from.value = '';
-        to.value = '';
+        if (to) to.value = '';
         selectingEnd = false;
 
         closeCalendar();
+        trigger.focus();
         updateText();
         renderCalendar();
     });
 
-    document.getElementById('y-range-done').addEventListener('click', () => {
+    document.getElementById('y-range-done')?.addEventListener('click', () => {
         if (from.value && !to.value) {
             to.value = from.value;
         }
 
         selectingEnd = false;
         closeCalendar();
+        trigger.focus();
         updateText();
         renderCalendar();
     });
 
+    document.addEventListener('keydown', (event) => {
+        if (!panel.hidden && event.key === 'Escape') {
+            closeCalendar();
+            trigger.focus();
+        }
+    });
+
     document.addEventListener('click', (event) => {
-        if (!panel.hidden && !panel.contains(event.target) && event.target !== trigger) {
+        if (!panel.hidden && !event.composedPath().includes(panel) && event.target !== trigger) {
             closeCalendar();
         }
     });

@@ -1,0 +1,30 @@
+<div id="y-range-calendar" class="y-range-calendar" hidden>
+    <div class="y-range-toolbar">
+        <button type="button" id="y-prev-month" aria-label="Previous Month"> ‹
+        </button>
+        <strong id="y-month-title" aria-live="polite">
+        </strong>
+        <button type="button" id="y-next-month" aria-label="Next Month"> ›
+        </button>
+    </div>
+    <div class="y-range-weekdays">
+        <span>Mon</span>
+        <span>Tue</span>
+        <span>Wed</span>
+        <span>Thu</span>
+        <span>Fri</span>
+        <span>Sat</span>
+        <span>Sun</span>
+    </div>
+    <div id="y-calendar-days" class="y-calendar-days">
+    </div>
+    <% if (!single) { %>
+        <p id="y-range-hint">Choose the start date, then the end date</p>
+    <% } %>
+    <div class="y-range-actions">
+        <button type="button" id="y-range-clear"><%= single ? 'Clear date' : 'Clear Dates' %></button>
+        <% if (!single) { %>
+            <button type="button" id="y-range-done">Done</button>
+        <% } %>
+    </div>
+</div>

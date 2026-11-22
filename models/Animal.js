@@ -55,6 +55,7 @@ const schema = new mongoose.Schema(
             default: 'pending'
         },
         assignedTo: ref('User'),
+        updatedBy: ref('User'),
         placementLocation: {
             type: String,
             default: '',

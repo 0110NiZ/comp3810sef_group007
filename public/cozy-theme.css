@@ -1116,18 +1116,22 @@ input:disabled {
     gap: 14px;
     align-items: end;
 }
-.filters .y-range-trigger {
+.filters .y-range-trigger,
+.followup-date .y-range-trigger {
     min-height: 44px;
     border: 2px solid #d6c6a8;
 }
-.filters .y-range-calendar button {
+.filters .y-range-calendar button,
+.followup-date .y-range-calendar button {
     min-height: 28px;
     box-shadow: none;
 }
-.filters .y-range-calendar button:hover {
+.filters .y-range-calendar button:hover,
+.followup-date .y-range-calendar button:hover {
     transform: none;
 }
-.filters .y-range-calendar {
+.filters .y-range-calendar,
+.followup-date .y-range-calendar {
     border: 2px solid #baa782;
     border-radius: 2px;
 }
@@ -2331,6 +2335,11 @@ body[data-page="home"] .topbar {
 }
 #case-summary[hidden], #care-journal[hidden], #adoption-history[hidden],
 #record-actions[hidden] { display: none; }
+#case-summary .case-staff {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    margin-bottom: 1rem;
+}
+.case-staff dt { margin-bottom: .25rem; }
 #case-summary .case-edit { align-self: flex-start; margin-top: auto; }
 @media (min-width: 1001px) {
     #case-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }

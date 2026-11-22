@@ -58,7 +58,7 @@
                             <% }) %>
                         </select>
                     </label>
-                    <label> Assigned To <em data-required-mark="assignedTo"
+                    <label> Rescue Coordinator <em data-required-mark="assignedTo"
                             aria-hidden="true" <%=
                                 ['rescuing', 'placed'].includes(animal.rescueStatus)
                                     ? ''
@@ -83,7 +83,7 @@
                                 </option>
                             <% }) %>
                         </select>
-                        <small class="field-hint" id="assignee-hint">Required for In
+                        <small class="field-hint" id="assignee-hint"><% if (!closed) { %>Other staff can also update this case. <% } %>Required for In
                             Rescue and Placed.</small>
                     </label>
                     <label class="full"> Placement Location <em

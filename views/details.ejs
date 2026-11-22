@@ -81,9 +81,17 @@
             </span>
             Rescue & Adoption
         </h2>
+        <dl class="case-staff">
+            <div>
+                <dt>Rescue Coordinator</dt>
+                <dd><%= unassigned ? 'Unassigned' : userName(animal.assignedTo) %></dd>
+            </div>
+            <div>
+                <dt>Last Updated By</dt>
+                <dd><%= animal.updatedBy ? userName(animal.updatedBy) : 'Not recorded' %></dd>
+            </div>
+        </dl>
         <dl>
-            <dt>Assigned To</dt>
-            <dd> <%= unassigned ? 'Unassigned' : userName(animal.assignedTo) %> </dd>
             <dt>Placement Location</dt>
             <dd> <%= animal.placementLocation || 'Not arranged' %> </dd>
             <dt>Adoption Status</dt>
