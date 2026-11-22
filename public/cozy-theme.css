@@ -2457,3 +2457,12 @@ body[data-page="home"] .topbar {
     .case-title-line h1 { font-size: 1.45rem; }
     .rescue-case .work-record-heading .badge { margin-left: 0; }
 }
+
+.phone-field { min-width: 0; }
+.phone-field > label { margin-bottom: .4rem; }
+.phone-controls {
+    display: grid;
+    grid-template-columns: minmax(5rem, max-content) minmax(0, 1fr);
+    gap: .5rem;
+    align-items: stretch;
+}

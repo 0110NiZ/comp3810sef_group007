@@ -1,0 +1,19 @@
+<%
+    const phone = digitsByCode.has(submittedPhoneCode)
+        ? { code: submittedPhoneCode, number: value || '' }
+        : phoneParts(value || '');
+%>
+<div class="phone-field">
+    <label for="<%= name %>">Phone Number <% if (required) { %><em>*</em><% } %></label>
+    <div class="phone-controls">
+        <select name="phoneCode" aria-label="Calling code">
+            <% for (const [code, digits] of digitsByCode) { %>
+                <option value="<%= code %>" data-digits="<%= digits %>"
+                    <%= phone.code === code ? 'selected' : '' %>><%= code %></option>
+            <% } %>
+        </select>
+        <input type="tel" id="<%= name %>" name="<%= name %>" inputmode="numeric"
+            autocomplete="tel-national" value="<%= phone.number %>" <%= required ? 'required' : '' %>
+            pattern="[0-9]{8}|[0-9]{11}" placeholder="<%= digitsByCode.get(phone.code) %> digits">
+    </div>
+</div>

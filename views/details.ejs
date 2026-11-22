@@ -66,7 +66,7 @@
             <dt>Registered By</dt>
             <dd> <%= userName(animal.createdBy) %> </dd>
         </dl>
-        <% if (!closed) { %>
+        <% if (!closed && managesCase(currentUser, animal)) { %>
             <a
                 class="case-edit"
                 href="/animals/<%= animal._id %>/edit<%= returnQuery('case-summary') %>"
@@ -111,15 +111,15 @@
         </dl>
         <% if (!closed) { %>
             <div class="actions">
-                <a
-                    class="button primary"
-                    href="/animals/<%= animal._id %>/rescue<%= returnQuery('case-summary') %>"
-                ><%= unassigned ? 'Assign Staff' : 'Update Rescue' %></a>
-                <a
-                    class="button"
-                    href="/animals/<%= animal._id %>/adoption<%= returnQuery('case-summary') %>"
-                >Adoption
-                    Management</a>
+                <% if (unassigned) { %>
+                    <%- include('take-case', { animal, query: returnQuery('case-summary') }) %>
+                <% } %>
+                <% if (managesCase(currentUser, animal)) { %>
+                    <a class="button primary" href="/animals/<%= animal._id %>/rescue<%= returnQuery('case-summary') %>"><%= unassigned ? 'Assign coordinator' : 'Manage Rescue' %></a>
+                    <a class="button" href="/animals/<%= animal._id %>/adoption<%= returnQuery('case-summary') %>">Adoption Management</a>
+                <% } else { %>
+                    <a class="button" href="/animals/<%= animal._id %>/followups/new<%= returnQuery('care-journal') %>">Add Follow-up</a>
+                <% } %>
             </div>
         <% } %>
     </section>
@@ -220,10 +220,12 @@
                         href="/animals/<%= animal._id %>/followups/<%= item._id %>/edit<%=
                             returnQuery('care-journal') %>">
                         <%- include('icon', { name: 'edit' }) %>Edit</a>
-                    <a class="text-link danger-text"
-                        href="/animals/<%= animal._id %>/followups/<%= item._id %>/delete<%=
-                            returnQuery('care-journal') %>">
-                        <%- include('icon', { name: 'delete' }) %>Delete</a>
+                    <% if (currentUser.role === 'admin') { %>
+                        <a class="text-link danger-text"
+                            href="/animals/<%= animal._id %>/followups/<%= item._id %>/delete<%=
+                                returnQuery('care-journal') %>">
+                            <%- include('icon', { name: 'delete' }) %>Delete</a>
+                    <% } %>
                 </div>
             <% } %>
         </article>

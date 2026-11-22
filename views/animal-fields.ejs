@@ -28,8 +28,5 @@
         <input name="contactName" value="<%= animal.contactName || '' %>"
             placeholder="Name of the reporting contact" required maxlength="80">
     </label>
-    <label>Phone Number <em>*</em>
-        <input name="contactPhone" type="tel" value="<%= animal.contactPhone || '' %>"
-            placeholder="Contact phone number" required maxlength="30">
-    </label>
+    <%- include('phone-field', { name: 'contactPhone', value: animal.contactPhone, required: true }) %>
 </div>

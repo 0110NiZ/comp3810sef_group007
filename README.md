@@ -66,8 +66,12 @@ allow writes to closed records. No sample records are inserted at startup.
 
 ## Workflow and permissions
 
-Staff manage open animal records, rescue, adoption and their own follow-ups. Administrators
-also manage staff access, edit/delete any follow-up and delete incorrect OPEN animal records
+Staff can register animals, read records, claim unassigned cases for themselves, and add
+follow-ups under their own names. Authors can edit their open-case follow-ups.
+Only administrators may delete an incorrect follow-up. On open cases, the coordinator or an administrator
+can edit animal details, update rescue progress and placement, manage adoption and close
+the case. Administrators can assign or hand over cases, manage staff access, correct any
+follow-up and delete incorrect open animal records
 with a reason and audit trail. Closed records are read-only for BOTH roles. Disabled users
 lose access on their next request and cannot sign in; historical references remain intact.
 
@@ -96,7 +100,9 @@ Follow-up list/create/edit now use this same envelope.
 | GET | /api/stats | Rescue/adoption counts and recent records |
 | GET, POST | /api/animals | Search/register animals |
 | GET, PUT, DELETE | /api/animals/:id | Read/edit/delete animal |
-| PUT | /api/animals/:id/rescue | Rescue status, assignee and placement |
+| PUT | /api/animals/:id/rescue | Update rescue progress and placement |
+| PUT | /api/animals/:id/claim | Take an unassigned case for yourself (expectedUpdatedAt) |
+| PUT | /api/animals/:id/assign | Administrator dispatch or handover (assignedTo, expectedUpdatedAt) |
 | GET, POST | /api/animals/:id/followups | List/create follow-ups |
 | PUT, DELETE | /api/animals/:id/followups/:followId | Edit/delete follow-up |
 | GET, POST, PUT | /api/animals/:id/adoption | Read/register/edit adoption |

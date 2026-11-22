@@ -19,10 +19,7 @@
                         <input name="displayName" value="<%= profile.displayName %>" required maxlength="80"
                             autocomplete="name">
                     </label>
-                    <label>Phone Number
-                        <input type="tel" name="phone" value="<%= profile.phone || '' %>" maxlength="30"
-                            autocomplete="tel" placeholder="Work contact number">
-                    </label>
+                    <%- include('phone-field', { name: 'phone', value: profile.phone, required: false }) %>
                 </div>
                 <div class="actions spaced">
                     <a class="button" href="/profile">Cancel</a>

@@ -19,7 +19,7 @@
         <div class="form-grid">
             <label>Username <em>*</em>
                 <input name="username" required minlength="3" maxlength="40"
-                    pattern="[a-zA-Z0-9_-]{3,40}" value="<%= values.username || '' %>" autocomplete="off">
+                    pattern="[a-zA-Z0-9_\-]{3,40}" value="<%= values.username || '' %>" autocomplete="off">
             </label>
             <label>Display Name <em>*</em>
                 <input
@@ -29,9 +29,7 @@
                     value="<%= values.displayName || '' %>"
                 >
             </label>
-            <label>Phone Number
-                <input type="tel" name="phone" maxlength="30" value="<%= values.phone || '' %>">
-            </label>
+            <%- include('phone-field', { name: 'phone', value: values.phone, required: false }) %>
             <label>Initial Password <em>*</em>
                 <input type="password" name="password" required minlength="8"
                     maxlength="128" autocomplete="new-password">

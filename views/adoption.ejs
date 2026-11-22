@@ -58,14 +58,7 @@
                         %>" required
                             maxlength="80">
                     </label>
-                    <label>Phone Number <em>*</em>
-                        <input type="tel" name="adopterPhone" value="<%=
-                            error && formAction === 'edit'
-                                    ? values.adopterPhone
-                                    : adoption.adopterPhone
-                        %>" required
-                            maxlength="30">
-                    </label>
+                    <%- include('phone-field', { name: 'adopterPhone', value: error && formAction === 'edit' ? values.adopterPhone : adoption.adopterPhone, required: true }) %>
                     <label class="full">Notes
                         <textarea name="remarks" rows="4"
                             maxlength="2000"><%=
@@ -110,10 +103,7 @@
                         <input name="adopterName" value="<%= values.adopterName %>" required
                             maxlength="80" autocomplete="off">
                     </label>
-                    <label>Phone Number <em>*</em>
-                        <input type="tel" name="adopterPhone" value="<%= values.adopterPhone %>" required
-                            maxlength="30" autocomplete="off">
-                    </label>
+                    <%- include('phone-field', { name: 'adopterPhone', value: values.adopterPhone, required: true }) %>
                     <label class="full">Notes
                         <textarea name="remarks" rows="5"
                             maxlength="2000"><%= values.remarks %></textarea>

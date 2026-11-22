@@ -225,11 +225,14 @@
                 <% } %>
                 <footer class="actions work-record-actions">
                     <% if (area.key === 'rescue' && !closed) { %>
-                        <a class="button primary"
-                            href="/animals/<%= animal._id %>/rescue<%= returnQuery('record-' + row._id) %>">
-                            <%- include('icon', { name: row.assignedTo ? 'care' : 'user-plus' }) %>
-                            <%= row.assignedTo ? 'Update Rescue' : 'Assign Staff' %>
-                        </a>
+                        <% if (!animal.assignedTo) { %>
+                            <%- include('take-case', { animal, query: returnQuery('record-' + row._id) }) %>
+                        <% } %>
+                        <% if (managesCase(currentUser, animal)) { %>
+                            <a class="button primary" href="/animals/<%= animal._id %>/rescue<%= returnQuery('record-' + row._id) %>">
+                                <%- include('icon', { name: 'care' }) %><%= row.assignedTo ? 'Manage Rescue' : 'Assign coordinator' %>
+                            </a>
+                        <% } %>
                         <a class="button"
                             href="/animals/<%= animal._id %>/followups/new<%=
                                 returnQuery('record-' + row._id) %>">
@@ -244,11 +247,13 @@
                             href="/animals/<%= animal._id %>/followups/<%= row._id %>/edit<%=
                                 returnQuery('record-' + row._id) %>">
                             <%- include('icon', { name: 'edit' }) %>Edit Entry</a>
-                        <a class="button danger-text"
-                            href="/animals/<%= animal._id %>/followups/<%= row._id %>/delete<%=
-                                returnQuery('record-' + row._id) %>">
-                            <%- include('icon', { name: 'delete' }) %>Delete Entry</a>
-                    <% } else if (area.key === 'adoption' && !closed && !['cancelled', 'completed'].includes(tab)) { %>
+                        <% if (currentUser.role === 'admin') { %>
+                            <a class="button danger-text"
+                                href="/animals/<%= animal._id %>/followups/<%= row._id %>/delete<%=
+                                    returnQuery('record-' + row._id) %>">
+                                <%- include('icon', { name: 'delete' }) %>Delete Entry</a>
+                        <% } %>
+                    <% } else if (area.key === 'adoption' && !closed && managesCase(currentUser, animal) && !['cancelled', 'completed'].includes(tab)) { %>
                         <a class="button primary"
                             href="/animals/<%= animal._id %>/adoption<%=
                                 returnQuery('record-' + row._id) %>"><%=

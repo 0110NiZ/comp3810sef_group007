@@ -16,6 +16,8 @@
     </a>
 </div>
 <% const closed = Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted'; %>
+<% const coordinator = users.find(user => String(user._id) === String(animal.assignedTo));
+   const canManage = !closed && managesCase(currentUser, animal); %>
 <% if (error) { %>
     <p class="warning-box" role="alert"> <%= error %> </p>
 <% } %>
@@ -35,6 +37,11 @@
             </span>
             Assignment & Placement
         </h2>
+        <p>Rescue coordinator: <strong><%= coordinator?.displayName || (animal.assignedTo ? 'Unknown account' : 'Unassigned') %></strong></p>
+        <% if (!closed && !animal.assignedTo && !stale) { %>
+            <%- include('take-case', { animal, query: carryReturn }) %>
+        <% } %>
+        <% if (canManage) { %>
         <form method="POST" action="/animals/<%= animal._id %>/rescue<%= carryReturn %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="expectedUpdatedAt" value="<%= expectedUpdatedAt %>">
@@ -57,34 +64,6 @@
                                 </option>
                             <% }) %>
                         </select>
-                    </label>
-                    <label> Rescue Coordinator <em data-required-mark="assignedTo"
-                            aria-hidden="true" <%=
-                                ['rescuing', 'placed'].includes(animal.rescueStatus)
-                                    ? ''
-                                    : 'hidden'
-                            %>>*</em>
-                        <select name="assignedTo" aria-describedby="assignee-hint"
-                            <%=
-                                ['rescuing', 'placed'].includes(animal.rescueStatus)
-                                    ? 'required'
-                                    : ''
-                            %>>
-                            <option value="">Unassigned</option>
-                            <% users.forEach(user => { %>
-                                <option
-                                    value="<%= user._id %>"
-                                    <%=
-                                        String(animal.assignedTo || '') === String(user._id)
-                                                ? 'selected'
-                                                : ''
-                                    %>
-                                > <%= user.displayName %>
-                                </option>
-                            <% }) %>
-                        </select>
-                        <small class="field-hint" id="assignee-hint"><% if (!closed) { %>Other staff can also update this case. <% } %>Required for In
-                            Rescue and Placed.</small>
                     </label>
                     <label class="full"> Placement Location <em
                             data-required-mark="placementLocation" aria-hidden="true"
@@ -110,31 +89,37 @@
                 </div>
             </fieldset>
         </form>
-    </section>
-    <aside class="panel form-aside">
-        <span class="aside-symbol"><%- include('icon', { name: 'care' }) %></span>
-        <h2>Before You Save</h2>
-        <p> Assign the person coordinating care, then record where the animal is staying.
-        </p>
-        <ol class="steps">
-            <li>
-                <strong>Pending Rescue</strong>
-                <br>Assignment and placement are optional.
-            </li>
-            <li>
-                <strong>In Rescue</strong>
-                <br>Choose a responsible staff member.
-            </li>
-            <li>
-                <strong>Placed</strong>
-                <br>Staff member and placement are required.
-            </li>
-        </ol>
-        <% if (!closed) { %>
-            <a class="button" href="/animals/<%= animal._id %>/followups/new"> ＋ Add Follow-up
-            </a>
+        <% } else { %>
+            <dl>
+                <dt>Rescue Progress</dt><dd><%= labels.rescueStatuses[animal.rescueStatus] %></dd>
+                <dt>Placement Location</dt><dd><%= animal.placementLocation || 'Not arranged' %></dd>
+            </dl>
         <% } %>
-    </aside>
+    </section>
+    <% if (!closed) { %>
+        <aside class="panel form-aside">
+            <% if (currentUser.role === 'admin' && !stale) { %>
+                <h2><%= animal.assignedTo ? 'Hand over case' : 'Assign coordinator' %></h2>
+                <form method="post" action="/animals/<%= animal._id %>/assign<%= carryReturn %>">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="expectedUpdatedAt" value="<%= expectedUpdatedAt %>">
+                    <label>New rescue coordinator
+                        <select name="assignedTo" required>
+                            <option value="">Select a coordinator</option>
+                            <% users.filter(user => user.isActive !== false && String(user._id) !== String(animal.assignedTo)).forEach(user => { %>
+                                <option value="<%= user._id %>"><%= user.displayName %></option>
+                            <% }) %>
+                        </select>
+                    </label>
+                    <button class="primary" type="submit"><%= animal.assignedTo ? 'Hand over case' : 'Assign coordinator' %></button>
+                </form>
+            <% } %>
+            <h2>Care follow-up</h2>
+            <a class="button" href="/animals/<%= animal._id %>/followups/new<%= carryReturn %>">
+                <%- include('icon', { name: 'notes-plus' }) %>Add Follow-up
+            </a>
+        </aside>
+    <% } %>
 </div>
 
 <%- include('footer') %>

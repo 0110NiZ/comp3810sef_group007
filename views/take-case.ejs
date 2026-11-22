@@ -1,0 +1,5 @@
+<form method="post" action="/animals/<%= animal._id %>/claim<%= query %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="expectedUpdatedAt" value="<%= animal.updatedAt.toISOString() %>">
+    <button class="primary" type="submit">Take case</button>
+</form>

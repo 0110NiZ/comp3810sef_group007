@@ -13,21 +13,30 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
 
 const placement = document.querySelector('[name="placementLocation"]');
 const rescueStage = document.querySelector('[name="rescueStatus"]');
-const assignee = document.querySelector('[name="assignedTo"]');
-if (placement && rescueStage && assignee) {
+if (placement && rescueStage) {
+    const mark = document.querySelector('[data-required-mark="placementLocation"]');
     const updateRequirements = () => {
         placement.required = rescueStage.value === 'placed';
-        assignee.required = ['rescuing', 'placed'].includes(rescueStage.value);
-        for (const field of [placement, assignee]) {
-            const mark = document.querySelector(`[data-required-mark="${field.name}"]`);
-            if (mark) mark.hidden = !field.required;
-            field.setAttribute('aria-required', String(field.required));
-            field.setCustomValidity('');
-        }
+        if (mark) mark.hidden = !placement.required;
+        placement.setAttribute('aria-required', String(placement.required));
+        placement.setCustomValidity('');
     };
     rescueStage.addEventListener('change', updateRequirements);
     updateRequirements();
 }
+
+document.querySelectorAll('.phone-controls').forEach((controls) => {
+    const select = controls.querySelector('select');
+    const input = controls.querySelector('input');
+    function updatePhoneFormat() {
+        const digits = select.selectedOptions[0].dataset.digits;
+        input.pattern = '[0-9]{' + digits + '}';
+        input.placeholder = digits + ' digits';
+        input.title = 'Enter ' + digits + ' digits for ' + select.value + '.';
+    }
+    select.addEventListener('change', updatePhoneFormat);
+    updatePhoneFormat();
+});
 
 // Reject whitespace-only required text before leaving the form.
 document

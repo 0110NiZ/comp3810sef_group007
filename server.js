@@ -9,6 +9,7 @@ const { randomBytes, scrypt, timingSafeEqual, createHmac } = require('node:crypt
 const { promisify } = require('node:util');
 const cookieSession = require('cookie-session');
 const labels = require('./models/constants');
+const { digitsByCode, phoneHint, phoneParts, normalizePhone } = require('./services/phone');
 const Animal = require('./models/Animal');
 const { nextAnimalCode, migrateAnimalCodes } = require('./services/animal-codes');
 const FollowUp = require('./models/FollowUp');
@@ -113,6 +114,7 @@ app.use((req, res, next) => {
             csrfToken: randomBytes(32).toString('hex')
         };
     }
+    res.locals.submittedPhoneCode = req.body?.phoneCode;
     res.locals.csrfToken = req.session.csrfToken;
     next();
 });
@@ -131,7 +133,21 @@ function sendApiError(res, status, code, message) {
     });
 }
 
+app.locals.phoneParts = phoneParts;
+app.locals.digitsByCode = digitsByCode;
 app.locals.labels = labels;
+app.locals.managesCase = managesCase;
+
+function managesCase(user, animal) {
+    const coordinator = animal.assignedTo?._id || animal.assignedTo;
+    return Boolean(user && (user.role === 'admin' ||
+        (coordinator && String(coordinator) === String(user._id))));
+}
+
+function requireCaseManager(user, animal) {
+    if (!managesCase(user, animal))
+        nFail(403, 'FORBIDDEN', 'Only the rescue coordinator or an administrator can update this case.');
+}
 
 // Remember each work area's last filter without accepting arbitrary return URLs.
 app.use((req, res, next) => {
@@ -463,23 +479,23 @@ async function updateProfile(req, res, next) {
             });
         }
         const allowed = isApiRequest(req)
-            ? new Set(['displayName', 'phone'])
-            : new Set(['displayName', 'phone', '_csrf']);
+            ? new Set(['displayName', 'phone', 'phoneCode'])
+            : new Set(['displayName', 'phone', 'phoneCode', '_csrf']);
         const body = req.body || {};
         const rawName = body.displayName;
         const rawPhone = body.phone === undefined ? '' : body.phone;
         const displayName = typeof rawName === 'string' ? rawName.trim() : '';
-        const phone = typeof rawPhone === 'string' ? rawPhone.trim() : '';
+        const phone = normalizePhone(rawPhone, body.phoneCode);
+        const invalidPhone = phone === null;
         const invalid =
             Object.keys(body).some((key) => !allowed.has(key)) ||
             typeof rawName !== 'string' ||
             displayName.length < 1 ||
             displayName.length > 80 ||
-            typeof rawPhone !== 'string' ||
-            phone.length > 30;
+            invalidPhone;
         if (invalid) {
-            const message =
-                'Display name must be 1–80 characters and phone at most 30. Username and role cannot be changed.';
+            const message = invalidPhone ? phoneHint :
+                'Display name must be 1–80 characters. Username and role cannot be changed.';
             if (isApiRequest(req))
                 return sendApiError(res, 400, 'VALIDATION_ERROR', message);
             return profileView(
@@ -487,7 +503,7 @@ async function updateProfile(req, res, next) {
                 {
                     ...current,
                     displayName,
-                    phone
+                    phone: typeof rawPhone === 'string' ? rawPhone : ''
                 },
                 {
                     status: 400,
@@ -703,22 +719,24 @@ async function createStaff(req, res) {
     const body = req.body || {};
     const username = typeof body.username === 'string' ? body.username.trim() : '';
     const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+    const rawPhone = body.phone === undefined ? '' : body.phone;
+    const phone = normalizePhone(rawPhone, body.phoneCode);
     if (
         Object.keys(body).some(
             (key) =>
-                !['username', 'displayName', 'phone', 'password', '_csrf'].includes(key)
+                !['username', 'displayName', 'phone', 'phoneCode', 'password', '_csrf'].includes(key)
         ) ||
         !/^[a-zA-Z0-9_-]{3,40}$/.test(username) ||
         !displayName ||
         displayName.length > 80 ||
-        phone.length > 30 ||
         typeof body.password !== 'string' ||
         body.password.length < 8 ||
         body.password.length > 128
     ) {
         message =
             'Use a 3–40 character username, a display name, and an 8–128 character password.';
+    } else if (phone === null) {
+        message = phoneHint;
     }
     if (!message) {
         try {
@@ -755,7 +773,7 @@ async function createStaff(req, res) {
         values: {
             username,
             displayName,
-            phone
+            phone: typeof rawPhone === 'string' ? rawPhone : ''
         }
     });
 }
@@ -905,6 +923,7 @@ function lInput(body, editing) {
     }
     const allowed = new Set([
         ...lBasicFields,
+        'phoneCode',
         '_csrf',
         ...(editing ? ['expectedUpdatedAt'] : [])
     ]);
@@ -932,6 +951,8 @@ function lInput(body, editing) {
             );
         }
     }
+    values.contactPhone = normalizePhone(body.contactPhone, body.phoneCode);
+    if (!values.contactPhone) throw lError(400, 'VALIDATION_ERROR', phoneHint);
     if (!Object.hasOwn(labels.animalTypes, values.animalType)) {
         throw lError(400, 'VALIDATION_ERROR', 'Select a valid animal type.');
     }
@@ -948,8 +969,8 @@ function lSafeValues(body) {
 }
 
 function lFailure(error, req, res, next, form) {
-    let status = error.lStatus;
-    let code = error.lCode;
+    let status = error.lStatus || error.nStatus;
+    let code = error.lCode || error.nCode;
     let message = error.message;
     if (error.code === 11000) {
         status = 409;
@@ -1037,6 +1058,7 @@ app.get('/animals/:id/edit', requireLogin, lDatabase, async (req, res, next) => 
     try {
         const animal = await lLoad(req.params.id);
         lOpen(animal);
+        requireCaseManager(req.user, animal);
         return res.render('edit', {
             title: 'Edit Animal',
             activePage: 'list',
@@ -1053,6 +1075,7 @@ async function lUpdate(req, res, next) {
     try {
         animal = await lLoad(req.params.id);
         lOpen(animal);
+        requireCaseManager(req.user, animal);
         const values = lInput(req.body, true);
         const supplied = req.body.expectedUpdatedAt;
         if (supplied === undefined) {
@@ -1088,7 +1111,8 @@ async function lUpdate(req, res, next) {
                 adoptionStatus: {
                     $ne: 'adopted'
                 },
-                updatedAt: animal.updatedAt
+                updatedAt: animal.updatedAt,
+                ...(req.user.role === 'admin' ? {} : { assignedTo: req.user._id })
             },
             {
                 $set: {
@@ -1920,15 +1944,9 @@ async function mHandleError(error, req, res) {
             [400, 409].includes(status)
         ) {
             const current = await mGetAnimal(req.params.id);
-            const users = await User.find({
-                isActive: {
-                    $ne: false
-                }
-            })
-                .select('_id displayName role')
-                .lean();
+            const users = await coordinatorChoices(current, req.user);
             const animal = current.toObject();
-            for (const field of ['rescueStatus', 'assignedTo', 'placementLocation']) {
+            for (const field of ['rescueStatus', 'placementLocation']) {
                 if (typeof req.body[field] === 'string')
                     animal[field] = req.body[field].slice(0, 200);
             }
@@ -2037,23 +2055,55 @@ function mRequireOpen(animal) {
 
 // ---------------------- Rescue Management ----------------------
 
+async function coordinatorChoices(animal, viewer) {
+    const filter = viewer.role === 'admin'
+        ? { $or: [{ isActive: { $ne: false } }, { _id: animal.assignedTo || null }] }
+        : { _id: animal.assignedTo || null };
+    return User.find(filter).select('displayName isActive').sort({ displayName: 1 }).lean();
+}
+
+function changeCoordinator(action) {
+    return async (req, res) => {
+        try {
+            const animal = await nTransaction(req.params.id, async (record, session) => {
+                mRequireOpen(record);
+                if (action === 'assign' && req.user.role !== 'admin')
+                    mFail(403, 'Only an administrator can assign or hand over a case.');
+                if (action === 'claim' && record.assignedTo)
+                    mFail(409, 'This case already has a coordinator.');
+                mExpectedVersion(req.body?.expectedUpdatedAt, record.updatedAt);
+                let coordinator = req.user._id;
+                if (action === 'assign') {
+                    coordinator = mId(req.body?.assignedTo);
+                    if (!await User.exists({ _id: coordinator, isActive: { $ne: false },
+                        role: { $in: ['admin', 'staff'] } }).session(session))
+                        mFail(400, 'Choose an active rescue coordinator.');
+                } else if (req.body?.assignedTo !== undefined) {
+                    mFail(400, 'Take case assigns the case to your own account.');
+                }
+                record.assignedTo = coordinator;
+                await record.save({ session });
+                return record;
+            }, req.user._id);
+            if (isApiRequest(req)) return res.json({ success: true, data: animal });
+            return res.redirect(303, '/animals/' + animal._id + '/rescue' + res.locals.carryReturn);
+        } catch (error) {
+            return mHandleError(error, req, res);
+        }
+    };
+}
+
+for (const action of ['claim', 'assign']) {
+    const handler = changeCoordinator(action);
+    app.post('/animals/:id/' + action, requireLogin, requireCsrf, handler);
+    app.put('/api/animals/:id/' + action, requireLogin, requireCsrf, handler);
+}
+
 app.get('/animals/:id/rescue', requireLogin, async (req, res) => {
     try {
         const animal = await mGetAnimal(req.params.id);
 
-        const users = await User.find({
-            role: {
-                $in: ['staff', 'admin']
-            },
-            isActive: {
-                $ne: false
-            }
-        })
-            .select('_id displayName role')
-            .sort({
-                displayName: 1
-            })
-            .lean();
+        const users = await coordinatorChoices(animal, req.user);
 
         return res.render('rescue', {
             title: 'Rescue Management',
@@ -2073,6 +2123,7 @@ app.get('/animals/:id/rescue', requireLogin, async (req, res) => {
 async function mUpdateRescue(req) {
     return nTransaction(req.params.id, async (animal, session) => {
         mRequireOpen(animal);
+        requireCaseManager(req.user, animal);
         mExpectedVersion(req.body?.expectedUpdatedAt, animal.updatedAt);
 
         const newStatus = mText(req.body, 'rescueStatus', 20);
@@ -2088,14 +2139,9 @@ async function mUpdateRescue(req) {
             mFail(400, 'Rescue progress cannot move backwards.');
         }
 
-        const assignedInput = req.body?.assignedTo;
-
-        if (assignedInput !== undefined && typeof assignedInput !== 'string') {
-            mFail(400, 'Invalid assignee format.');
-        }
-
-        const assignedTo =
-            assignedInput === undefined ? animal.assignedTo : assignedInput.trim() || null;
+        const assignedTo = animal.assignedTo;
+        if (req.body.assignedTo !== undefined && req.body.assignedTo !== String(assignedTo || ''))
+            mFail(req.user.role === 'admin' ? 400 : 403, 'Use the separate coordinator assignment action.');
 
         const locationInput = req.body?.placementLocation;
 
@@ -2138,7 +2184,6 @@ async function mUpdateRescue(req) {
 
         Object.assign(animal, {
             rescueStatus: newStatus,
-            assignedTo,
             placementLocation
         });
         await animal.save({
@@ -2216,6 +2261,8 @@ async function renderFollowUpView(req, res, mode) {
                 mFail(404, 'Follow-up not found.');
             }
 
+            if (mode === 'delete' && req.user.role !== 'admin')
+                mFail(403, 'Only an administrator can delete a follow-up.');
             if (!mCanManageFollowUp(req, followUp)) {
                 mFail(403, 'Only the author or an administrator can change this entry.');
             }
@@ -2442,23 +2489,15 @@ async function mDeleteFollowUp(req) {
             mFail(404, 'Follow-up not found.');
         }
 
-        if (!mCanManageFollowUp(req, followUp)) {
-            mFail(403, 'Only the author or an administrator can delete this entry.');
+        if (req.user.role !== 'admin') {
+            mFail(403, 'Only an administrator can delete a follow-up.');
         }
 
         mExpectedVersion(req.body?.expectedUpdatedAt, followUp.updatedAt);
-        const conditions = {
+        const deleted = await FollowUp.findOneAndDelete({
             _id: followUp._id,
             animalId: animal._id
-        };
-
-        if (req.user.role !== 'admin') {
-            conditions.recordedBy = req.user._id;
-        }
-
-        const deleted = await FollowUp.findOneAndDelete(conditions, {
-            session
-        });
+        }, { session });
 
         if (!deleted) {
             mFail(409, 'This record has changed. Reload and try again.');
@@ -2561,6 +2600,11 @@ function nText(body, key, maximum, required = true) {
             'VALIDATION_ERROR',
             label + 'must be nonempty and no longer than ' + maximum + ' characters'
         );
+    }
+    if (key === 'adopterPhone') {
+        const phone = normalizePhone(value, body.phoneCode);
+        if (!phone) nFail(400, 'VALIDATION_ERROR', phoneHint);
+        return phone;
     }
     return text;
 }
@@ -2725,18 +2769,19 @@ async function nRead(id) {
     };
 }
 async function nChangeStatus(id, body, user) {
-    const target = body?.adoptionStatus;
-    if (!['available', 'not_open'].includes(target))
-        nFail(400, 'VALIDATION_ERROR', 'Only opening or withdrawing adoption is allowed.');
-    if (target === 'available' && !nConfirmed(body?.healthConfirmed)) {
-        nFail(
-            400,
-            'HEALTH_CONFIRMATION_REQUIRED',
-            'Confirm the animal is healthy enough for adoption.'
-        );
-    }
     return nTransaction(id, async (animal, session) => {
         nOpenAnimal(animal);
+        requireCaseManager(user, animal);
+        const target = body?.adoptionStatus;
+        if (!['available', 'not_open'].includes(target))
+            nFail(400, 'VALIDATION_ERROR', 'Only opening or withdrawing adoption is allowed.');
+        if (target === 'available' && !nConfirmed(body?.healthConfirmed)) {
+            nFail(
+                400,
+                'HEALTH_CONFIRMATION_REQUIRED',
+                'Confirm the animal is healthy enough for adoption.'
+            );
+        }
         const expected = target === 'available' ? 'not_open' : 'available';
         if (animal.adoptionStatus !== expected)
             nFail(
@@ -2778,13 +2823,14 @@ async function nChangeStatus(id, body, user) {
     }, user._id);
 }
 async function nRegister(id, body, user) {
-    const fields = {
-        adopterName: nText(body, 'adopterName', 80),
-        adopterPhone: nText(body, 'adopterPhone', 30),
-        remarks: nText(body, 'remarks', 2000, false)
-    };
     return nTransaction(id, async (animal, session) => {
         nOpenAnimal(animal);
+        requireCaseManager(user, animal);
+        const fields = {
+            adopterName: nText(body, 'adopterName', 80),
+            adopterPhone: nText(body, 'adopterPhone', 30),
+            remarks: nText(body, 'remarks', 2000, false)
+        };
         if (animal.adoptionStatus !== 'available' || animal.rescueStatus !== 'placed') {
             nFail(
                 409,
@@ -2854,7 +2900,6 @@ function nAdoptionVersion(body, adoption) {
     }
 }
 async function nProcessingAdoption(animal, session, body) {
-    nOpenAnimal(animal);
     if (animal.adoptionStatus !== 'processing')
         nFail(
             409,
@@ -2873,12 +2918,14 @@ async function nProcessingAdoption(animal, session, body) {
     return adoption;
 }
 async function nEditAdoption(id, body, user) {
-    const fields = {
-        adopterName: nText(body, 'adopterName', 80),
-        adopterPhone: nText(body, 'adopterPhone', 30),
-        remarks: nText(body, 'remarks', 2000, false)
-    };
     return nTransaction(id, async (animal, session) => {
+        nOpenAnimal(animal);
+        requireCaseManager(user, animal);
+        const fields = {
+            adopterName: nText(body, 'adopterName', 80),
+            adopterPhone: nText(body, 'adopterPhone', 30),
+            remarks: nText(body, 'remarks', 2000, false)
+        };
         const adoption = await nProcessingAdoption(animal, session, body);
         Object.assign(adoption, fields, {
             updatedBy: user._id
@@ -2894,10 +2941,12 @@ async function nEditAdoption(id, body, user) {
     }, user._id);
 }
 async function nCancelAdoption(id, body, user) {
-    const reason = nText(body, 'cancellationReason', 1000);
-    if (!nConfirmed(body?.confirm))
-        nFail(400, 'CONFIRMATION_REQUIRED', 'Confirm cancellation of this adoption.');
     return nTransaction(id, async (animal, session) => {
+        nOpenAnimal(animal);
+        requireCaseManager(user, animal);
+        const reason = nText(body, 'cancellationReason', 1000);
+        if (!nConfirmed(body?.confirm))
+            nFail(400, 'CONFIRMATION_REQUIRED', 'Confirm cancellation of this adoption.');
         const adoption = await nProcessingAdoption(animal, session, body);
         adoption.cancelledAt = new Date();
         adoption.cancelledBy = user._id;
@@ -2919,10 +2968,11 @@ async function nCancelAdoption(id, body, user) {
 }
 
 async function nClose(id, body, user) {
-    if (!nConfirmed(body?.confirm))
-        nFail(400, 'CONFIRMATION_REQUIRED', 'Confirm the adoption details and handover.');
     return nTransaction(id, async (animal, session) => {
         nOpenAnimal(animal);
+        requireCaseManager(user, animal);
+        if (!nConfirmed(body?.confirm))
+            nFail(400, 'CONFIRMATION_REQUIRED', 'Confirm the adoption details and handover.');
         if (animal.adoptionStatus !== 'processing' || animal.rescueStatus !== 'placed') {
             nFail(
                 409,
@@ -3137,6 +3187,8 @@ function nCheckCsrf(req, res, next) {
 }
 async function nRender(req, res, view, error = null, status = 200) {
     const data = await nRead(req.params.id);
+    if (view !== 'delete' && !data.animal.closedAt && data.animal.adoptionStatus !== 'adopted')
+        requireCaseManager(req.user, data.animal);
     if (['delete', 'cancel-adoption'].includes(view)) nOpenAnimal(data.animal);
     if (
         view === 'cancel-adoption' &&
@@ -3345,7 +3397,6 @@ async function nRunIntegrationTests() {
     const uri =
         process.env.TEST_MONGODB_URI || 'mongodb://127.0.0.1:27018/?replicaSet=group007rs';
     let httpServer;
-    let realServer;
     let count = 0;
     const passed = (label) => {
         count++;
@@ -3365,15 +3416,20 @@ async function nRunIntegrationTests() {
         );
         await nPrepareDatabase();
         const { User, Animal, Adoption, FollowUp, DeletionLog } = nGetModels();
+        const password = randomBytes(24).toString('hex');
+        const passwordHash = await hashPassword(password);
         const staff = await User.create({
             username: 'n_test_staff',
-            passwordHash: 'not-a-login-password',
+            passwordHash,
             displayName: 'Test Staff',
             role: 'staff'
         });
+        const colleague = await User.create({
+            username: 'n_test_colleague', passwordHash, displayName: 'Test Colleague', role: 'staff'
+        });
         const admin = await User.create({
             username: 'n_test_admin',
-            passwordHash: 'not-a-login-password',
+            passwordHash,
             displayName: 'Test Administrator',
             role: 'admin'
         });
@@ -3394,50 +3450,12 @@ async function nRunIntegrationTests() {
                 ...overrides
             });
         }
-        const fixture = express();
-        fixture.set('view engine', 'ejs');
-        fixture.set('views', path.join(__dirname, 'views'));
-        fixture.locals.labels = labels;
-        fixture.locals.formatDate = app.locals.formatDate;
-        fixture.use(express.static(path.join(__dirname, 'public')));
-        fixture.use(express.json());
-        fixture.use(
-            express.urlencoded({
-                extended: false
-            })
-        );
-        fixture.use(
-            cookieSession({
-                name: 'n_test_session',
-                keys: [randomBytes(32).toString('hex')],
-                httpOnly: true
-            })
-        );
-        fixture.use((req, res, next) => {
-            const id = req.get('X-Test-User');
-            req.user =
-                id === String(staff._id)
-                    ? {
-                          _id: staff._id
-                      }
-                    : id === String(admin._id)
-                      ? {
-                            _id: admin._id
-                        }
-                      : null;
-            res.locals.currentUser = null;
-            next();
-        });
-        nRegisterRoutes(fixture);
         httpServer = await new Promise((resolve) => {
-            const server = fixture.listen(0, '127.0.0.1', () => resolve(server));
-        });
-        realServer = await new Promise((resolve) => {
             const server = app.listen(0, '127.0.0.1', () => resolve(server));
         });
         const base = 'http://127.0.0.1:' + httpServer.address().port;
         const clients = Object.fromEntries(
-            ['staff', 'admin', 'anonymous'].map((role) => [
+            ['staff', 'colleague', 'admin', 'anonymous'].map((role) => [
                 role,
                 {
                     cookie: '',
@@ -3448,8 +3466,6 @@ async function nRunIntegrationTests() {
         async function request(method, url, body, role = 'staff', options = {}) {
             const client = clients[role];
             const headers = {};
-            if (role !== 'anonymous')
-                headers['X-Test-User'] = String(role === 'admin' ? admin._id : staff._id);
             if (client.cookie) headers.Cookie = client.cookie;
             if (client.csrf && !options.noCsrf) headers['X-CSRF-Token'] = client.csrf;
             let payload;
@@ -3482,6 +3498,16 @@ async function nRunIntegrationTests() {
                 location: response.headers.get('location')
             };
         }
+        for (const [role, user] of Object.entries({ staff, colleague, admin })) {
+            const token = await request('GET', '/api/csrf', undefined, role);
+            assert.equal(token.status, 200);
+            clients[role].csrf = token.json.data.csrfToken;
+            const login = await request('POST', '/api/login', {
+                username: user.username, password
+            }, role);
+            assert.equal(login.status, 200);
+            clients[role].csrf = '';
+        }
         const a = await animal();
         const id = String(a._id);
         const api = '/api/animals/' + id;
@@ -3496,7 +3522,7 @@ async function nRunIntegrationTests() {
         );
         passed('Unauthenticated API requests rejected and web requests redirected');
         const realResponse = await fetch(
-            'http://127.0.0.1:' + realServer.address().port + api + '/adoption',
+            base + api + '/adoption',
             {
                 headers: {
                     'X-Test-User': String(admin._id)
@@ -3546,6 +3572,13 @@ async function nRunIntegrationTests() {
             ).status,
             400
         );
+        for (const role of ['admin', 'colleague']) {
+            const token = await request('GET', '/api/csrf', undefined, role);
+            clients[role].csrf = token.json.data.csrfToken;
+        }
+        await require('./scripts/test-case-permissions')({
+            request, animal, Animal, staff, colleague, admin, passed
+        });
         const pending = await animal({
             rescueStatus: 'pending',
             assignedTo: null,
@@ -3556,7 +3589,7 @@ async function nRunIntegrationTests() {
                 await request('PUT', '/api/animals/' + pending._id + '/adoption-status', {
                     adoptionStatus: 'available',
                     healthConfirmed: true
-                })
+                }, 'admin')
             ).status,
             409
         );
@@ -3571,7 +3604,7 @@ async function nRunIntegrationTests() {
                     {
                         adoptionStatus: 'available',
                         healthConfirmed: true
-                    }
+                    }, 'admin'
                 )
             ).status,
             409
@@ -3666,12 +3699,13 @@ async function nRunIntegrationTests() {
         );
         assert.equal(String(saved.registeredBy), String(staff._id));
         assert.equal(saved.completedAt, null);
-        assert.equal(saved.adopterPhone, '00000123');
+        assert.equal(saved.adopterPhone, '+85200000123');
         assert.equal(saved.remarks, 'Test notes');
         assert.equal((await Animal.findById(id)).adoptionStatus, 'processing');
         passed('Concurrent registration succeeds once and preserves trusted authorship');
         const html = await request('GET', '/animals/' + id + '/adoption');
         assert.equal(html.status, 200);
+        assert.ok(html.text.includes('href="/adoption-management"'));
         assert.ok(html.text.includes('&lt;script&gt;'));
         assert.ok(!html.text.includes('<script>alert(1)</script>'));
         passed('Adoption page escapes user content');
@@ -3910,10 +3944,16 @@ async function nRunIntegrationTests() {
             }
         );
         assert.equal(formOk.status, 303);
-        assert.equal((await request('GET', formOk.location)).status, 200);
+        const destination = new URL(formOk.location, base);
+        assert.equal(destination.pathname, '/adoption-management');
+        assert.equal(destination.searchParams.get('tab'), 'processing');
+        const registeredPage = await request('GET', formOk.location);
+        assert.equal(registeredPage.status, 200);
         const bAdoption = await Adoption.findOne({
             animalId: bid
         });
+        assert.equal(destination.hash, '#record-' + bAdoption._id);
+        assert.ok(registeredPage.text.includes('id="record-' + bAdoption._id + '"'));
         const bStamp = {
             adoptionId: String(bAdoption._id),
             adoptionVersion: bAdoption.__v || 0
@@ -4382,7 +4422,7 @@ async function nRunIntegrationTests() {
             }
         );
         assert.equal(staleForm.status, 409);
-        assert.ok(staleForm.text.includes('Reload and Review'));
+        assert.match(staleForm.text, /Reload\s+and\s+Review\s*<\/a>/);
         assert.ok(staleForm.text.includes('disabled'));
         currentStamp = await stampFor(eid);
         assert.equal(
@@ -4492,7 +4532,7 @@ async function nRunIntegrationTests() {
             undefined,
             'admin'
         );
-        assert.ok(!closedAdoptionPage.text.includes('Delete Incorrect Record'));
+        assert.doesNotMatch(closedAdoptionPage.text, /Delete\s+Incorrect\s+Record/);
         assert.ok(
             !closedAdoptionPage.text.includes('action="/animals/' + eid + '/adoption/edit"')
         );
@@ -4799,8 +4839,7 @@ async function nRunIntegrationTests() {
                 databaseName
         );
     } finally {
-        for (const server of [httpServer, realServer])
-            if (server) await new Promise((resolve) => server.close(resolve));
+        if (httpServer) await new Promise((resolve) => httpServer.close(resolve));
         if (
             mongoose.connection.readyState === 1 &&
             mongoose.connection.name === databaseName &&

@@ -169,12 +169,12 @@
                                     const closedCase =
                                         Boolean(animal.closedAt) || animal.adoptionStatus === 'adopted';
                                 %>
-                                <% if (mode === 'rescue' && !closedCase) { %>
+                                <% if (mode === 'rescue' && !closedCase && managesCase(currentUser, animal)) { %>
                                     <a class="button"
                                         href="/animals/<%= animal._id %>/rescue<%=
                                             returnQuery('record-' + animal._id) %>">
                                         Manage Rescue</a>
-                                <% } else if (mode === 'adoption' && !closedCase) { %>
+                                <% } else if (mode === 'adoption' && !closedCase && managesCase(currentUser, animal)) { %>
                                     <a class="button"
                                         href="/animals/<%= animal._id %>/adoption<%=
                                             returnQuery('record-' + animal._id) %>">
