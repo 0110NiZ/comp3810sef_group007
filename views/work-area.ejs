@@ -236,7 +236,7 @@
                             %>
                         </a>
                     <% } %>
-                    <a class="text-link"
+                    <a class="<%= area.key === 'adoption' ? 'button primary' : 'text-link' %>"
                         href="/animals/<%= animal._id %><%= returnQuery('record-' + row._id) %><%=
                             area.key === 'followups'
                                     ? '#care-journal'

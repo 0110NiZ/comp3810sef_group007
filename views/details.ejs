@@ -5,6 +5,9 @@
 <a class="case-back" href="<%= source.url %>">
     ← Back to <%= source.label === 'List' ? 'Animal Records' : source.label %>
 </a>
+<% if (rescueNotice) { %>
+    <p class="form-feedback" role="status"><%= rescueNotice %></p>
+<% } %>
 <header class="case-identity">
     <span class="detail-pet"><%- include('pet-avatar', { animal }) %></span>
     <div>

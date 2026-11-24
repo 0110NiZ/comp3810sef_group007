@@ -173,7 +173,6 @@ app.use((req, res, next) => {
     res.locals.workReturn = category
         ? req.session?.workReturns?.[category] || defaults[category]
         : '';
-    res.locals.rescueSaved = category === 'rescue' && req.query.saved === '1';
     next();
 });
 
@@ -1203,6 +1202,11 @@ app.get('/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
                 .lean()
         ]);
         if (!animal) throw lError(404, 'NOT_FOUND', 'This animal record has been deleted.');
+        const notice = req.session.workNotice;
+        const rescueNotice = notice?.path === req.path && notice.id === req.params.id
+            ? notice.message
+            : '';
+        if (rescueNotice) delete req.session.workNotice;
         const userName = (user) =>
             !user
                 ? 'Account unavailable'
@@ -1212,6 +1216,7 @@ app.get('/animals/:id', requireLogin, lDatabase, async (req, res, next) => {
             source: res.locals.backSource || { url: '/animals', label: 'List' },
             title: 'Animal Details',
             activePage: 'list',
+            rescueNotice,
             animal,
             followUps,
             adoption: adoptionRecords[0] || null,
@@ -2202,20 +2207,13 @@ function mExpectedVersion(value, timestamp) {
 app.post('/animals/:id/rescue', requireLogin, requireCsrf, async (req, res) => {
     try {
         const animal = await mUpdateRescue(req);
-        if (animal.rescueStatus === 'placed') {
-            return await redirectToWorkRecord(
-                req, res, '/rescue-management', 'placed', Animal,
-                { rescueStatus: 'placed', closedAt: null, adoptionStatus: { $ne: 'adopted' } },
-                animal, animal.animalCode + ' — placement saved.'
-            );
-        }
-        return res.redirect(
-            303,
-            '/animals/' +
-                req.params.id +
-                '/rescue?saved=1' +
-                res.locals.carryReturn.replace('?', '&')
-        );
+        const path = '/animals/' + animal._id;
+        req.session.workNotice = {
+            path,
+            id: String(animal._id),
+            message: animal.animalCode + ' — rescue details saved.'
+        };
+        return res.redirect(303, path + res.locals.carryReturn);
     } catch (error) {
         return mHandleError(error, req, res);
     }
