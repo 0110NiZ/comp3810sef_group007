@@ -201,14 +201,12 @@
     <% followUps.forEach(item => { %>
         <article class="history">
             <small> <%= formatDate(item.createdAt) %> · <%= userName(item.recordedBy) %> </small>
-            <p> <%= item.content %> </p>
+            <p class="care-note"><%= item.content %></p>
             <% if (item.nextFollowUpDate) { %>
-                <p>
-                    Next follow-up ·
-                    <time datetime="<%= item.nextFollowUpDate %>">
-                    <%= item.nextFollowUpDate %>
-                </time>
-                </p>
+                <div class="care-followup-date">
+                    <span>Next follow-up:</span>
+                    <time datetime="<%= item.nextFollowUpDate %>"><%= item.nextFollowUpDate %></time>
+                </div>
             <% } %>
             <% if (item.updatedBy) { %>
                 <small>

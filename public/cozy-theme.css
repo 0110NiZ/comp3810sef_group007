@@ -367,8 +367,21 @@ tbody tr:hover {
     background: #e7edcf;
 }
 
-.care-journal .history p {
+.care-journal .care-note {
     background: #f7f3e8;
+}
+
+.care-followup-date {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .35rem .5rem;
+    margin: .65rem 0;
+}
+
+.care-followup-date time {
+    white-space: nowrap;
+    font-weight: 600;
 }
 
 .history {

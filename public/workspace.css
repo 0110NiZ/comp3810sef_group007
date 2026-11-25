@@ -504,7 +504,7 @@ label em {
     box-shadow: 0 0 0 4px #f7f2fc;
 }
 
-.care-journal .history p {
+.care-journal .care-note {
     padding: 14px 16px;
     background: #f8f5fc;
     border-radius: 9px;
