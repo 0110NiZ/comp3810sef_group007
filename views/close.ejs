@@ -7,7 +7,6 @@
         <h1 class="pixel-page-title">
             <%- include('icon', { name: 'home-check' }) %> <%= animal.closedAt ? 'Adoption Completed' : 'Complete Adoption' %>
         </h1>
-        <p>Review the handover before closing this case.</p>
     </div>
     <a class="button" href="<%= backSource?.url || '/animals/' + animal._id + '/adoption' %>">
         Back to <%= backSource?.label || 'Adoption' %>
@@ -58,7 +57,6 @@
                 the adoption details and completed the handover
             </label>
             <div class="form-bottom">
-                <p>Confirmation closes the case and retains its history.</p>
                 <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>>
                     Complete Adoption &
                     Close Case</button>

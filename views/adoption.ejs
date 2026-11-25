@@ -43,8 +43,6 @@
                 !animal.closedAt
             ) {
         %>
-            <p>Update the current adoption details here. If the adopter withdraws, cancel
-                this adoption before registering another.</p>
             <form method="POST" action="/animals/<%= animal._id %>/adoption/edit<%= carryReturn %>">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="adoptionId" value="<%= adoption._id %>">
@@ -75,9 +73,7 @@
                         Changes </button>
                 </div>
             </form>
-            <div class="panel-note">
-                <p>Adopter withdrawing? Keep a record of the reason before starting
-                    another adoption.</p>
+            <div class="actions spaced">
                 <a class="button cancel-adoption-button"
                     href="/animals/<%= animal._id %>/adoption/cancel<%= returnQuery() %>">Cancel This Adoption</a>
             </div>
@@ -110,7 +106,6 @@
                     </label>
                 </div>
                 <div class="form-bottom">
-                    <p>Saving starts the adoption process.</p>
                     <button class="primary" type="submit" <%= stale ? 'disabled' : '' %>>
                         <%- include('icon', { name: 'adoption' }) %>Register
                         Adoption </button>
@@ -120,8 +115,6 @@
             <% if (animal.closedAt) { %>
                 <p>This case is closed. Its records are read-only.</p>
             <% } else { %>
-                <p>Review placement and health, then confirm that this animal is ready for
-                    a new home.</p>
                 <dl class="adoption-readiness">
                     <dt>Placement</dt>
                     <dd><%= animal.placementLocation || 'Not arranged' %></dd>
@@ -226,8 +219,6 @@
 <% if (adoptionHistory.length) { %>
     <section class="panel spaced">
         <h2>Cancelled Adoptions</h2>
-        <p>These entries are retained for reference and cannot be changed or cancelled
-            again.</p>
         <% adoptionHistory.forEach(entry => { %>
             <article class="history">
                 <h3> <%= entry.adopterName %> · Cancelled</h3>

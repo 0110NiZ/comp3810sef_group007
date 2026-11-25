@@ -73,7 +73,7 @@
 }
 
 .y-range-weekdays span, .y-range-calendar p {
-    font-size: .8rem;
+    font-size: 1rem;
     color: var(--muted);
 }
 

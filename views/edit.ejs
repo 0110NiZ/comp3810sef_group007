@@ -3,7 +3,7 @@
 <div class="page-heading">
     <div>
         <h1 class="pixel-page-title"><%- include('icon', { name: 'edit' }) %>Edit Animal</h1>
-        <p> <%= animal.animalCode %> · Update details and contact information</p>
+        <p> <%= animal.animalCode %></p>
     </div>
     <a class="button" href="<%= backSource?.url || '/animals/' + animal._id %>">
         Back to <%= backSource?.label || 'Details' %>

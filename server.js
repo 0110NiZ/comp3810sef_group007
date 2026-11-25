@@ -426,8 +426,9 @@ function profileView(res, profile, options = {}) {
         error: options.error || '',
         success: options.success || '',
         assignedAnimals: options.assignedAnimals || [],
-        latestFollowUp: options.latestFollowUp || null,
-        followUpCount: options.followUpCount || 0
+        recentNotes: options.recentNotes || [],
+        assignedCount: options.assignedCount || 0,
+        unassignedCount: options.unassignedCount || 0
     });
 }
 
@@ -443,23 +444,40 @@ app.get('/profile', requireLogin, async (req, res, next) => {
         if (req.query.edit === '1')
             return profileView(res, profile, { editing: true });
 
-        const myNotes = { recordedBy: req.user._id };
-        const [assignedAnimals, latestFollowUp, followUpCount] = await Promise.all([
-            Animal.find({
-                assignedTo: req.user._id,
-                closedAt: null,
-                adoptionStatus: { $ne: 'adopted' }
-            }).select('animalCode animalType appearance rescueStatus')
-                .sort({ updatedAt: -1, animalCode: 1 }).lean(),
-            FollowUp.findOne(myNotes).select('animalId content createdAt')
-                .sort({ createdAt: -1, _id: -1 }).populate('animalId', 'animalCode').lean(),
-            FollowUp.countDocuments(myNotes)
+        const openCases = { closedAt: null, adoptionStatus: { $ne: 'adopted' } };
+        const assignedCases = { ...openCases, assignedTo: req.user._id };
+        const [assignedAnimals, assignedCount, recentNotes, unassignedCount] = await Promise.all([
+            Animal.find(assignedCases).select('animalCode animalType appearance rescueStatus')
+                .sort({ updatedAt: -1, animalCode: 1 }).limit(3).lean(),
+            Animal.countDocuments(assignedCases),
+            FollowUp.find({ recordedBy: req.user._id }).select('animalId content createdAt')
+                .sort({ createdAt: -1, _id: -1 }).limit(2)
+                .populate('animalId', 'animalCode').lean(),
+            req.user.role === 'admin'
+                ? Animal.countDocuments({ ...openCases, assignedTo: null }) : 0
         ]);
+        const latestDates = assignedAnimals.length ? await FollowUp.aggregate([
+            { $match: { animalId: { $in: assignedAnimals.map(animal => animal._id) } } },
+            { $sort: { animalId: 1, createdAt: -1, _id: -1 } },
+            { $group: { _id: '$animalId', due: { $first: '$nextFollowUpDate' } } }
+        ]) : [];
+        const dateByAnimal = new Map(latestDates.map(note => [String(note._id), note.due]));
+        const today = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(new Date());
+        for (const animal of assignedAnimals) {
+            const due = dateByAnimal.get(String(animal._id));
+            animal.followUpState = !due ? 'none' : due < today ? 'overdue' : due === today ? 'today' : 'future';
+            animal.followUpLabel = !due ? 'No date set' : due < today ? 'Overdue' : due === today ? 'Today'
+                : new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+                    .format(new Date(due + 'T00:00:00Z'));
+            animal.nextFollowUpDate = due || null;
+        }
         return profileView(res, profile, {
             success: req.query.updated === 'password'
                 ? 'Password updated. Other sessions have been signed out.'
                 : req.query.updated === '1' ? 'Profile saved.' : '',
-            assignedAnimals, latestFollowUp, followUpCount
+            assignedAnimals, assignedCount, recentNotes, unassignedCount
         });
     } catch (error) {
         return next(error);
@@ -1708,7 +1726,11 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
         const invalidAnimalCode = Boolean(q) && !animalCodePattern.test(q);
         const animalSearch = q ? { animalCode: q } : {};
         const open = { closedAt: null, adoptionStatus: { $ne: 'adopted' } };
-        const assignedToMe = area.key === 'rescue' && req.query.assignedTo === 'me';
+        const assignedFilter = area.key === 'rescue' &&
+            (req.query.assignedTo === 'me' ||
+                (req.user.role === 'admin' && req.query.assignedTo === 'unassigned'))
+            ? req.query.assignedTo : '';
+        const assignedToMe = assignedFilter === 'me';
         let model = Animal;
         let where = animalSearch;
         const animalRows =
@@ -1731,6 +1753,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             };
             if (['pending', 'rescuing', 'placed'].includes(tab)) where.rescueStatus = tab;
             if (assignedToMe) where.assignedTo = req.user._id;
+            else if (assignedFilter === 'unassigned') where.assignedTo = null;
         } else if (animalRows) {
             where = { ...animalSearch, ...open };
             if (area.key === 'adoption') where.adoptionStatus = tab;
@@ -1777,7 +1800,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
                 tab: nextTab,
                 q,
                 page: String(nextPage),
-                ...(assignedToMe ? { assignedTo: 'me' } : {})
+                ...(assignedFilter ? { assignedTo: assignedFilter } : {})
             }).toString();
         req.session.workReturns = {
             ...req.session.workReturns,
@@ -1802,7 +1825,7 @@ app.get(Object.keys(workAreas), requireLogin, yDatabaseAvailable, async (req, re
             pageCount,
             pageSize: RECORDS_PER_PAGE,
             urlFor,
-            assignedToMe,
+            assignedFilter,
             basePath: req.path
         });
     } catch (error) {

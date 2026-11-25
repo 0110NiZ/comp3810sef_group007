@@ -2,8 +2,8 @@
 :root {
     --paper: #fffefd;
     --canvas: #f7f5f1;
-    --ink: #292638;
-    --muted: #706d7c;
+    --ink: #30291f;
+    --muted: var(--ink);
     --line: #e7e3ed;
     --brand: #6253c6;
     --mint: #efecfb;
@@ -111,7 +111,7 @@ h1 {
 }
 
 h2 {
-    font-size: 17px;
+    font-size: 18px;
     letter-spacing: -0.3px;
 }
 
@@ -126,7 +126,7 @@ h2 {
 }
 
 .page-heading p {
-    font-size: 12px;
+    font-size: 18px;
     margin-top: 8px;
 }
 
@@ -142,7 +142,7 @@ h2 {
 button {
     border-color: #ded9e8;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 18px;
     font-weight: 600;
 }
 
@@ -216,7 +216,7 @@ select:disabled {
 
 .welcome-banner p {
     max-width: 470px;
-    font-size: 13px;
+    font-size: 18px;
     line-height: 1.7;
     color: #71667e;
 }
@@ -277,12 +277,12 @@ select:disabled {
 }
 
 .workspace-shortcuts strong {
-    font-size: 12px;
+    font-size: 18px;
     color: var(--ink);
 }
 
 .workspace-shortcuts small {
-    font-size: 11px;
+    font-size: 18px;
     color: var(--muted);
 }
 
@@ -345,7 +345,7 @@ select:disabled {
 }
 
 .record-copy strong {
-    font-size: 10px;
+    font-size: 18px;
     color: #82768e;
 }
 
@@ -354,8 +354,7 @@ select:disabled {
     margin: 3px 0;
 }
 
-.heading-icon,
-.aside-symbol {
+.heading-icon {
     color: #7960b7;
     background: #f0ebfa;
 }
@@ -435,45 +434,11 @@ select:disabled {
 
 .form-aside p {
     color: #776b84;
-    font-size: 12px;
-}
-
-.steps {
-    padding-left: 22px;
-}
-
-.steps li {
-    display: block;
-    position: relative;
-    padding-left: 10px;
-    padding: 8px 0;
-    font-size: 12px;
-    color: #776c86;
-}
-
-.steps li::before {
-    position: absolute;
-    left: -26px;
-    top: 9px;
-    color: #78649d;
-    border-color: #d8cbe9;
-}
-
-.steps strong {
-    color: #554366;
+    font-size: 18px;
 }
 
 .form-grid {
     gap: 18px 22px;
-}
-
-.field-hint {
-    display: block;
-    margin: 7px 0;
-    font-size: 11px;
-    line-height: 1.6;
-    font-weight: 400;
-    color: #787080;
 }
 
 label em {
@@ -490,7 +455,7 @@ label em {
 
 .form-bottom p {
     max-width: 330px;
-    font-size: 11px;
+    font-size: 18px;
 }
 
 .warning-box {
@@ -517,7 +482,7 @@ label em {
 
 .case-navigation a {
     color: #695491;
-    font-size: 12px;
+    font-size: 18px;
     font-weight: 600;
 }
 
@@ -556,7 +521,6 @@ label em {
     background: #f4f0fa;
 }
 
-.panel-note,
 .filters,
 th,
 thead {

@@ -1,3 +1,7 @@
+html {
+    font-size: 18px;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -58,7 +62,7 @@
 .login-intro p {
     margin: 0.95rem 0 0;
     max-width: 28em;
-    color: #455d40;
+    color: #30291f;
     font-size: clamp(18px, 1.6vw, 21.5px);
     line-height: 1.38;
 }
@@ -119,7 +123,7 @@
     padding: 0.55rem 0.75rem;
     border: 1.5px solid #bfad8b;
     background: #fffdfa;
-    color: #342d24;
+    color: #30291f;
     font-size: 1.05rem;
     font-weight: 400;
 }
@@ -149,13 +153,6 @@
 .login-form :focus-visible {
     outline: 3px solid #657d49;
     outline-offset: 3px;
-}
-
-.login-hint {
-    margin: 1.35rem 0 0;
-    color: #68665c;
-    font-size: 1.125rem;
-    line-height: 1.45;
 }
 
 .form-feedback {
@@ -217,8 +214,12 @@
         height: 2.25rem;
     }
 
-    .login-form label,
-    .login-hint {
+    .login-form label {
         font-size: 1rem;
     }
+}
+
+.login-form input::placeholder {
+    color: #807a70;
+    opacity: 1;
 }

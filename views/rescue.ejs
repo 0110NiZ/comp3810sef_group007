@@ -25,7 +25,7 @@
     <p class="form-feedback">This case is closed. The record is read-only.</p>
 <% } %>
 
-<div class="form-layout rescue-form-layout">
+<div class="rescue-workspace">
     <section class="panel">
         <h2 class="icon-heading">
             <span class="heading-icon">
@@ -41,8 +41,6 @@
         <form method="POST" action="/animals/<%= animal._id %>/rescue<%= carryReturn %>">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="expectedUpdatedAt" value="<%= expectedUpdatedAt %>">
-            <p class="field-hint">Fields marked * are required. Requirements update with
-                rescue progress.</p>
             <fieldset <%= closed || stale ? 'disabled' : '' %>>
                 <div class="form-grid">
                     <label> Rescue Progress <em aria-hidden="true">*</em>
@@ -67,13 +65,10 @@
                         <input name="placementLocation" value="<%= animal.placementLocation || '' %>"
                             placeholder="Clinic, shelter or temporary placement"
                             maxlength="200"
-                            aria-describedby="placement-hint" <%= animal.rescueStatus === 'placed' ? 'required' : '' %>>
-                        <small class="field-hint" id="placement-hint">Required when the
-                            rescue progress is Placed.</small>
+                            <%= animal.rescueStatus === 'placed' ? 'required' : '' %>>
                     </label>
                 </div>
                 <div class="form-bottom">
-                    <p>Rescue progress moves forward. Closed records are read-only.</p>
                     <div class="actions">
                         <a
                             class="button"
@@ -93,10 +88,10 @@
         <% } %>
     </section>
     <% if (!closed) { %>
-        <aside class="panel form-aside">
-            <% if (currentUser.role === 'admin' && !stale) { %>
+        <% if (currentUser.role === 'admin' && !stale) { %>
+            <section class="panel">
                 <h2><%= animal.assignedTo ? 'Hand over case' : 'Assign coordinator' %></h2>
-                <form method="post" action="/animals/<%= animal._id %>/assign<%= carryReturn %>">
+                <form class="coordinator-form" method="post" action="/animals/<%= animal._id %>/assign<%= carryReturn %>">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="expectedUpdatedAt" value="<%= expectedUpdatedAt %>">
                     <label>New rescue coordinator
@@ -109,12 +104,14 @@
                     </label>
                     <button class="primary" type="submit"><%= animal.assignedTo ? 'Hand over case' : 'Assign coordinator' %></button>
                 </form>
-            <% } %>
-            <h2>Care follow-up</h2>
-            <a class="button" href="/animals/<%= animal._id %>/followups/new<%= carryReturn %>">
+            </section>
+        <% } %>
+        <section class="panel rescue-followup">
+            <h2 class="icon-heading"><%- include('icon', { name: 'notes' }) %>Care follow-up</h2>
+            <a class="button primary" href="/animals/<%= animal._id %>/followups/new<%= carryReturn %>">
                 <%- include('icon', { name: 'notes-plus' }) %>Add Follow-up
             </a>
-        </aside>
+        </section>
     <% } %>
 </div>
 

@@ -23,7 +23,7 @@
             area.key !== 'followups' || key !== 'new' || tab === 'new'
         ).forEach(([key, label]) => { %>
             <a
-                class="button <%= tab === key ? 'primary' : '' %>"
+                class="button"
                 href="<%= urlFor(key) %>"
                 <%- tab === key ? 'aria-current="page"' : '' %>
             ><%= label %></a>
@@ -32,8 +32,11 @@
 
     <form class="panel work-search" method="get" action="<%= basePath %>">
         <input type="hidden" name="tab" value="<%= tab %>">
-        <% if (assignedToMe) { %>
-            <input type="hidden" name="assignedTo" value="me">
+        <% if (assignedFilter) { %>
+            <input type="hidden" name="assignedTo" value="<%= assignedFilter %>">
+        <% } %>
+        <% if (assignedFilter) { %>
+            <p class="work-filter-label"><%= assignedFilter === 'me' ? 'Assigned to Me' : 'Unassigned cases' %> · <a href="<%= basePath %>?tab=<%= tab %>">Show all cases</a></p>
         <% } %>
         <label>Animal code
             <input name="q" maxlength="100" value="<%= q %>"
@@ -43,7 +46,7 @@
         <button class="primary" type="submit">
             <%- include('icon', { name: 'search' }) %>Search
         </button>
-        <a class="button" href="<%= basePath %>?tab=<%= tab %><%= assignedToMe ? '&assignedTo=me' : '' %>">
+        <a class="button" href="<%= basePath %>?tab=<%= tab %><%= assignedFilter ? '&assignedTo=' + assignedFilter : '' %>">
             <%- include('icon', { name: 'refresh' }) %>Reset
         </a>
         <% if (invalidAnimalCode) { %>
@@ -69,10 +72,8 @@
                 <h2>No animals are currently in rescue</h2>
             <% } else if (availableAdoption) { %>
                 <h2>No animals are available for adoption</h2>
-                <p>Animals appear here after placement and health confirmation.</p>
             <% } else { %>
                 <h2><%= area.key === 'rescue' && tab !== 'archived' ? 'No active cases in this category' : 'Nothing here yet' %></h2>
-                <p>Records will appear here when they reach this stage.</p>
             <% } %>
             <div class="work-empty-actions">
                 <% if (q) { %>
@@ -236,7 +237,7 @@
                             %>
                         </a>
                     <% } %>
-                    <a class="<%= area.key === 'adoption' ? 'button primary' : 'text-link' %>"
+                    <a class="<%= area.key === 'adoption' ? 'button primary' : 'button' %>"
                         href="/animals/<%= animal._id %><%= returnQuery('record-' + row._id) %><%=
                             area.key === 'followups'
                                     ? '#care-journal'

@@ -55,58 +55,62 @@
     </section>
 
     <% if (!editing) { %>
-        <section class="panel my-work" aria-labelledby="my-work-title">
-            <h2 class="icon-heading" id="my-work-title">
-                <%- include('icon', { name: 'notes' }) %>My Work
-            </h2>
-            <section class="account-work-section">
-                <div class="account-work-heading">
-                    <h3>Assigned to Me<% if (assignedAnimals.length) { %>
-                        <span class="my-work-count"><%= assignedAnimals.length %></span>
-                    <% } %></h3>
+        <div class="account-workspace">
+            <% if (profile.role === 'admin') { %>
+                <section class="panel account-unassigned">
+                    <h2 class="icon-heading"><%- include('icon', { name: 'care' }) %>Unassigned cases
+                        <span class="my-work-count"><%= unassignedCount %></span>
+                    </h2>
+                    <a class="button" href="/rescue-management?assignedTo=unassigned">Assign cases →</a>
+                </section>
+            <% } %>
+            <section class="panel my-work" aria-labelledby="my-work-title">
+                <h2 class="icon-heading" id="my-work-title"><%- include('icon', { name: 'notes' }) %>My Work</h2>
+                <section class="account-work-section">
+                    <div class="account-work-heading">
+                        <h3>Assigned to Me <span class="my-work-count"><%= assignedCount %></span></h3>
+                        <a class="button" href="/rescue-management?assignedTo=me">View all <%= assignedCount %> →</a>
+                    </div>
                     <% if (assignedAnimals.length) { %>
-                        <a class="button" href="/rescue-management?assignedTo=me" aria-label="View all assigned cases">View All</a>
-                    <% } else { %>
-                        <span class="muted">No open cases</span>
+                        <div class="account-table-wrap">
+                            <table class="account-cases">
+                                <thead><tr><th scope="col">Animal</th><th scope="col">Rescue status</th><th scope="col">Next Follow-up</th></tr></thead>
+                                <tbody>
+                                    <% for (const animal of assignedAnimals) { %>
+                                        <tr>
+                                            <td><div class="account-animal">
+                                                <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
+                                                <div><a href="/animals/<%= animal._id %>"><%= animal.animalCode %></a><p><%= animal.appearance %></p></div>
+                                            </div></td>
+                                            <td><span class="badge status-<%= animal.rescueStatus %>"><%= labels.rescueStatuses[animal.rescueStatus] %></span></td>
+                                            <td><span class="account-due due-<%= animal.followUpState %>" title="<%= animal.nextFollowUpDate || 'No date set' %>"><%= animal.followUpLabel %></span></td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %><p>No open cases assigned to you.</p><% } %>
+                </section>
+                <section class="account-work-section">
+                    <div class="account-work-heading">
+                        <h3 class="icon-heading"><%- include('icon', { name: 'notes' }) %>My recent notes</h3>
+                        <a class="button" href="/followup-records?tab=mine">View all notes →</a>
+                    </div>
+                    <% for (const note of recentNotes) { %>
+                        <article class="account-note">
+                            <p class="account-note-meta">
+                                <% if (note.animalId) { %>
+                                    <a href="/animals/<%= note.animalId._id %>#care-journal"><%= note.animalId.animalCode %></a>
+                                <% } else { %><span>Animal unavailable</span><% } %>
+                                <time datetime="<%= note.createdAt.toISOString() %>"><%= formatDate(note.createdAt) %></time>
+                            </p>
+                            <p class="account-note-preview"><%= note.content %></p>
+                        </article>
                     <% } %>
-                </div>
-                <% if (assignedAnimals.length) { %>
-                    <ul class="account-cases">
-                        <% for (const animal of assignedAnimals) { %>
-                            <li>
-                                <span class="work-animal-icon"><%- include('pet-avatar', { animal }) %></span>
-                                <div>
-                                    <a href="/animals/<%= animal._id %>"><%= animal.animalCode %></a>
-                                    <div class="muted"><%= animal.appearance %></div>
-                                </div>
-                                <span class="badge status-<%= animal.rescueStatus %>">
-                                    <%= labels.rescueStatuses[animal.rescueStatus] %>
-                                </span>
-                            </li>
-                        <% } %>
-                    </ul>
-                <% } %>
+                    <% if (!recentNotes.length) { %><p>No follow-ups yet.</p><% } %>
+                </section>
             </section>
-            <section class="account-work-section">
-                <div class="account-work-heading">
-                    <h3>My Follow-ups <span class="my-work-count"><%= followUpCount %></span></h3>
-                    <a class="button" href="/followup-records?tab=mine" aria-label="View all my follow-ups">View All</a>
-                </div>
-                <% if (latestFollowUp) { %>
-                    <p class="account-note-meta">
-                        <% if (latestFollowUp.animalId) { %>
-                            <a href="/animals/<%= latestFollowUp.animalId._id %>#care-journal"><%= latestFollowUp.animalId.animalCode %></a>
-                        <% } else { %>
-                            Animal unavailable
-                        <% } %>
-                        <span class="muted"><%= formatDate(latestFollowUp.createdAt) %></span>
-                    </p>
-                    <p class="account-note-preview"><%= latestFollowUp.content %></p>
-                <% } else { %>
-                    <p class="muted">No follow-ups yet.</p>
-                <% } %>
-            </section>
-        </section>
+        </div>
     <% } %>
 </div>
 

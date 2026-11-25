@@ -69,7 +69,6 @@
                 <input type="checkbox" required> I have reviewed this entry
             </label>
             <div class="form-bottom">
-                <p>This entry cannot be restored after deletion.</p>
                 <div class="actions">
                     <a
                         class="button"
@@ -94,10 +93,7 @@
             <% } %>
             <label> Notes <em>*</em>
                 <textarea name="content" rows="7" required maxlength="2000"
-                    aria-describedby="notes-hint"
-                    placeholder="Record treatment, care and observations"><%= noteValue %></textarea>
-                <small class="field-hint" id="notes-hint">Required · Up to 2,000
-                    characters. Include observations, care given and next steps.</small>
+                                        placeholder="Record treatment, care and observations"><%= noteValue %></textarea>
             </label>
             <div class="spaced y-date-range-field followup-date">
                 <label for="y-date-from">Next Follow-up Date (optional)</label>
