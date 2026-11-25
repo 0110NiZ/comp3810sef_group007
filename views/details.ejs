@@ -95,6 +95,12 @@
             </div>
         </dl>
         <dl>
+            <dt>Rescue Progress</dt>
+            <dd>
+                <span class="badge status-<%= animal.rescueStatus %>">
+                    <%= labels.rescueStatuses[animal.rescueStatus] %>
+                </span>
+            </dd>
             <dt>Placement Location</dt>
             <dd> <%= animal.placementLocation || 'Not arranged' %> </dd>
             <dt>Adoption Status</dt>

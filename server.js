@@ -4,6 +4,7 @@
 // 00 Shared configuration and authentication context
 const express = require('express');
 const mongoose = require('mongoose');
+const { applicationDatabaseName } = require('./services/database-config');
 const path = require('node:path');
 const { randomBytes, scrypt, timingSafeEqual, createHmac } = require('node:crypto');
 const { promisify } = require('node:util');
@@ -873,7 +874,8 @@ async function createAdministrator() {
     const passwordHash = await hashPassword(password);
     if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required.');
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
+        const dbName = applicationDatabaseName(process.env.MONGODB_URI);
+        await mongoose.connect(process.env.MONGODB_URI, { dbName });
         await User.init();
         if (
             await User.exists({
@@ -4931,15 +4933,15 @@ app.use((error, req, res, next) => {
 async function startServer() {
     try {
         if (process.env.CONNECT_DB === '1') {
-            await mongoose.connect(
-                process.env.MONGODB_URI ||
-                    'mongodb://127.0.0.1:27017/animal_rescue_group007',
-                {
-                    serverSelectionTimeoutMS: 5000
-                }
-            );
+            const uri = process.env.MONGODB_URI ||
+                'mongodb://127.0.0.1:27017/animal_rescue_group007';
+            const dbName = applicationDatabaseName(uri);
+            await mongoose.connect(uri, {
+                dbName,
+                serverSelectionTimeoutMS: 5000
+            });
             await nPrepareDatabase();
-            console.log('MongoDB connected; database indexes ready');
+            console.log('MongoDB connected; database: ' + mongoose.connection.name + '; database indexes ready');
         }
 
         const port = process.env.PORT || 8099;

@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
-    "test:n": "NODE_ENV=test node server.js --test-n"
+    "test:n": "NODE_ENV=test node server.js --test-n",
+    "test:db-config": "node --test scripts/test-database-config.js"
   },
   "keywords": [],
   "author": "",

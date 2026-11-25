@@ -53,6 +53,10 @@ mongod --replSet group007rs --bind_ip 127.0.0.1 --port 27018 --dbpath /tmp/group
 mongosh --port 27018 --eval 'rs.initiate({_id:"group007rs",members:[{_id:0,host:"127.0.0.1:27018"}]})'
 ```
 
+Application startup, administrator creation and the migration command require an explicit
+database name in MONGODB_URI and reject the database named test before connecting.
+Startup logs the selected database name without printing the connection URI.
+
 Startup creates declared indexes. It replaces only the legacy full unique adoption animalId_1
 index with one_current_adoption, a partial unique index for uncancelled registrations. Other
 indexes and business data are retained. Missing isActive fields become true. Only the known
