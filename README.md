@@ -35,8 +35,6 @@ Repository: https://github.com/0110NiZ/comp3810sef_group007
 | `scripts/` | Animal-code migration and test files. |
 | `.env.example` | An example of the settings needed to run the server. |
 
-We use Kenney assets (CC0), bluecarrot16's cat and dog artwork (CC BY 3.0), and Pixelarticons (MIT). These are third-party assets. Their sources and licenses are listed in [public/assets/README.md](public/assets/README.md).
-
 ## 4. Operation Guide
 
 ### 4.1 Start the project
@@ -314,3 +312,26 @@ rmdir -- "$DEMO_DIR"
 Expected results: GET, PUT and DELETE normally return **200**; creating the animal returns **201**; the deletion check returns **404**. Check that the updated response shows `Healthy` before deleting the test record.
 
 These examples cover animal CRUD, statistics and filtering. The other API endpoints are listed in Section 4.4.
+
+## 5. Third-party Assets
+
+We use the following third-party artwork in the interface. The artwork belongs to its original creators. Our project uses selected images and icons in the page layouts; we do not claim that these assets were drawn by our group.
+
+| Asset | Creator | License used | How we use it |
+| --- | --- | --- | --- |
+| Tiny Town [1] | Kenney | CC0 1.0 | Selected tiles arranged in the cottage and header scenery. |
+| Pixel UI Pack [2] | Kenney Vleugels, with help from Lynn Evers | CC0 1.0 | Panel border image, resized and sliced with CSS. |
+| [LPC] Cats and Dogs [3] | bluecarrot16 | CC BY 3.0 | Animal sprites and decorations. Frames are selected, cropped and scaled; the original sprite sheets are kept unchanged. |
+| Pixelarticons [4] | Gerrit Halfmann | MIT | Selected SVG icons combined in `public/icons.svg`, with colors set by CSS. |
+
+The original files and license notices are kept in `public/assets/vendor/`. More details are in [public/assets/README.md](public/assets/README.md). Keep the attribution and license notices when sharing the project.
+
+## 6. References
+
+1. Kenney. [*Tiny Town*](https://kenney.nl/assets/tiny-town) — [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+2. Kenney. [*Pixel UI Pack*](https://kenney.nl/assets/pixel-ui-pack) — [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+3. bluecarrot16. [*[LPC] Cats and Dogs*](https://opengameart.org/content/lpc-cats-and-dogs). OpenGameArt — we use the [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) option. Attribution: “[LPC] Cats and Dogs”, artist bluecarrot16.
+4. Halfmann, G. [*Pixelarticons*](https://github.com/halfmage/pixelarticons) — [MIT license for the bundled source revision](https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/LICENSE).
+5. COMP3810SEF teaching team. *Group Project Requirements*. Autumn 2026. Course material available through OLE.
+6. COMP3810SEF teaching team. *Appendix IV – Review and Intro of Project Samples*. Autumn 2026. Course material available through OLE.
+7. COMP3810SEF teaching team. *project_code_samples.zip*. Autumn 2026. Course examples available through OLE.
