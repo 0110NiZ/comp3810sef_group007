@@ -1418,45 +1418,6 @@ function yBuildMongoFilter(filters) {
     return query;
 }
 
-function yMatchMock(animal, filters) {
-    for (const field of ['animalType', 'rescueStatus', 'adoptionStatus']) {
-        if (filters[field] && animal[field] !== filters[field]) {
-            return false;
-        }
-    }
-
-    const location = String(animal.foundLocation || '');
-
-    if (
-        filters.foundLocation &&
-        !location.toLowerCase().includes(filters.foundLocation.toLowerCase())
-    ) {
-        return false;
-    }
-
-    if (filters.dateFrom || filters.dateTo) {
-        const createdAt = new Date(animal.createdAt);
-
-        if (!Number.isFinite(createdAt.getTime())) {
-            return false;
-        }
-
-        const date = new Date(createdAt.getTime() + 8 * 60 * 60 * 1000)
-            .toISOString()
-            .slice(0, 10);
-
-        if (filters.dateFrom && date < filters.dateFrom) {
-            return false;
-        }
-
-        if (filters.dateTo && date > filters.dateTo) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 async function yQueryAnimals(query) {
     const { filters, requestedPage } = yParseFilters(query);
 

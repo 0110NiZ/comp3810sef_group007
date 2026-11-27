@@ -229,20 +229,6 @@ select:disabled {
     gap: 10px;
 }
 
-.welcome-actions .pet-pair {
-    width: 165px;
-    height: 133px;
-}
-
-.pet-dog {
-    background: #dcd5f2;
-    color: #74629b;
-}
-
-.pet-spark {
-    color: #a390c6;
-}
-
 .workspace-shortcuts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -566,8 +552,7 @@ tbody tr:hover {
 
 .login-story p,
 .login-story .eyebrow,
-.story-bottom,
-.login-story .pet-pair-caption {
+.story-bottom {
     color: #806d8b;
 }
 
