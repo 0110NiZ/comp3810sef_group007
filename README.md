@@ -34,7 +34,6 @@ Repository: https://github.com/0110NiZ/comp3810sef_group007
 | `services/` | Helpers for animal codes, phone numbers and database configuration. |
 | `scripts/` | Animal-code migration and test files. |
 | `.env.example` | An example of the settings needed to run the server. |
-| `docs/REST_API_FULL_CHECKS.md` | Extra copy-and-run commands for the full API, including rescue, follow-ups and adoption. |
 
 We use Kenney assets (CC0), bluecarrot16's cat and dog artwork (CC BY 3.0), and Pixelarticons (MIT). These are third-party assets. Their sources and licenses are listed in [public/assets/README.md](public/assets/README.md).
 
@@ -314,4 +313,4 @@ rmdir -- "$DEMO_DIR"
 
 Expected results: GET, PUT and DELETE normally return **200**; creating the animal returns **201**; the deletion check returns **404**. Check that the updated response shows `Healthy` before deleting the test record.
 
-These short examples cover animal CRUD, statistics and filtering. Extra commands for accounts, rescue, follow-ups and adoption are in [the full API examples](docs/REST_API_FULL_CHECKS.md). Prepare those too when demonstrating all REST services required by the assignment.
+These examples cover animal CRUD, statistics and filtering. The other API endpoints are listed in Section 4.4.
