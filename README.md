@@ -89,7 +89,7 @@ For the first run, create the local demo administrator and start the app:
 ```bash
 export MONGODB_URI='mongodb://127.0.0.1:27018/animal_rescue_group007_demo?replicaSet=group007rs'
 export CONNECT_DB=1
-printf '%s' 'Arc-Admin-007-demo' | ADMIN_USERNAME=demo_admin007 node --env-file-if-exists=.env server.js --create-admin
+printf '%s' 'group007' | ADMIN_USERNAME=admin01 node --env-file-if-exists=.env server.js --create-admin
 npm start
 ```
 
@@ -99,12 +99,14 @@ The server requires a database name in the connection URI and rejects the databa
 
 ### 4.2 Login and roles
 
-Create these accounts only in the local demo database above. They are not added automatically when the server starts.
+Use the following accounts to sign in. For a new local database, create the administrator using Section 4.1 and create the staff account through the administrator's Team Accounts page.
 
-| Role | Username | Local demo password | Setup |
+| Role | Username | Password | Setup |
 | --- | --- | --- | --- |
-| Administrator | `demo_admin007` | `Arc-Admin-007-demo` | Created by the command in 4.1. |
-| Staff | `demo_staff007` | `Arc-Staff-007-demo` | The administrator creates it in **Team Accounts -> Create Staff Account**. Enter a display name and this initial password, then click **Create Account**. |
+| Administrator | `admin01` | `group007` | Created by the command in 4.1. |
+| Staff | `staff01` | `group007` | Created by an administrator through **Team Accounts -> Create Staff Account**. |
+
+**Administrators can create staff accounts.** Sign in as `admin01`, open **Team Accounts -> Create Staff Account**, enter the username `staff01`, a display name and the initial password `group007`, then click **Create Account**. The phone number is optional. The new account has the **Staff** role and is **Active**. Administrators can use the same page to create additional staff accounts with different usernames.
 
 Enter the username and password and click **Sign in**. Click **Sign Out** in the sidebar to log out. **My Account** lets users edit their profile, change their password and see their assigned cases and recent notes.
 
@@ -187,7 +189,7 @@ BASE=http://127.0.0.1:8099 &&
 DEMO_DIR=$(mktemp -d) &&
 export DEMO_DIR &&
 COOKIE="$DEMO_DIR/cookies.txt" &&
-USER_NAME=demo_admin007 &&
+USER_NAME=admin01 &&
 set -o pipefail &&
 curl -sS --fail-with-body -c "$COOKIE" "$BASE/api/csrf" -o "$DEMO_DIR/csrf.json" &&
 TOKEN=$(node -p 'require(process.env.DEMO_DIR + "/csrf.json").data.csrfToken')
