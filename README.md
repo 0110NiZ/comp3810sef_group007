@@ -14,13 +14,13 @@ Repository: https://github.com/0110NiZ/comp3810sef_group007
 
 ## 2. Group Information
 
-| Member | Name | SID | Main work |
-| --- | --- | --- | --- |
-| T | TANG Wanqiao | 13339703 | Login, logout, profiles, passwords and staff accounts |
-| L | LIN Keying | 13405317 | Animal registration, details, editing and input checks |
-| Y | YAN Xiyu | 13387657 | Dashboard, search, filters, sorting, pagination and shared UI |
-| M | MAI Zilin | 13393467 | Case claiming and handover, rescue progress, placement and follow-ups |
-| N | NIE Zhidan (Team leader) | 13255894 | Adoption, cancellation, case closure, deletion and deletion logs |
+| Name | SID | Main work |
+| --- | --- | --- |
+| TANG Wanqiao | 13339703 | Login, logout, profiles, passwords and staff accounts |
+| LIN Keying | 13405317 | Animal registration, details, editing and input checks |
+| YAN Xiyu | 13387657 | Dashboard, search, filters, sorting, pagination and shared UI |
+| MAI Zilin | 13393467 | Case claiming and handover, rescue progress, placement and follow-ups |
+| NIE Zhidan (Team leader) | 13255894 | Adoption, cancellation, case closure, deletion and deletion logs |
 
 ## 3. Project Files
 
